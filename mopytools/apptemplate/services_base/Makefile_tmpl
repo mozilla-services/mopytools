@@ -1,0 +1,51 @@
+APPNAME = ${appname}
+DEPS = server-core
+VIRTUALENV = virtualenv
+PYTHON = bin/python
+EZ = bin/easy_install
+NOSE = bin/nosetests -s --with-xunit
+FLAKE8 = bin/flake8
+COVEROPTS = --cover-html --cover-html-dir=html --with-coverage --cover-package=syncreg,syncstorage,services
+TESTS = deps/server-core/services/tests ${package}/tests
+PKGS = deps/server-core/services ${package}
+COVERAGE = bin/coverage
+PYLINT = bin/pylint
+PYPI2RPM = bin/pypi2rpm.py
+SERVER = dev-auth.services.mozilla.com
+SCHEME = https
+
+.PHONY: all build test build_rpms
+
+all:	build
+
+build:
+	$$(VIRTUALENV) --no-site-packages --distribute .
+	$$(PYTHON) build.py $$(APPNAME) $$(DEPS)
+	$$(EZ) nose
+	$$(EZ) coverage
+	$$(EZ) flake8
+	$$(EZ) pylint
+	$$(EZ) pygments
+	$$(EZ) pypi2rpm
+	$$(EZ) WebTest
+	$$(EZ) PasteDeploy
+	$$(EZ) wsgi_intercept
+
+test:
+	cd deps/server-core; hg pull; hg up -C
+	rm -f coverage.xml
+	- $$(COVERAGE) run --source=${package},services $$(NOSE) $$(TESTS); $$(COVERAGE) xml
+	rm -f pylint.txt
+	- $$(PYLINT) -f parseable --rcfile=pylintrc $$(PKGS) > pylint.txt
+
+build_rpms:
+	rm -rf $$(CURDIR)/rpms
+	mkdir $$(CURDIR)/rpms
+	$$(PYPI2RPM) --dist-dir=$$(CURDIR)/rpms webob
+	$$(PYPI2RPM) --dist-dir=$$(CURDIR)/rpms paste
+	$$(PYPI2RPM) --dist-dir=$$(CURDIR)/rpms pastedeploy
+	$$(PYPI2RPM) --dist-dir=$$(CURDIR)/rpms pastescript
+	$$(PYPI2RPM) --dist-dir=$$(CURDIR)/rpms sqlalchemy
+	$$(PYPI2RPM) --dist-dir=$$(CURDIR)/rpms routes
+	$$(PYPI2RPM) --dist-dir=$$(CURDIR)/rpms simplejson
+	cd deps/server-core; rm -rf build; ../../$$(PYTHON) setup.py --command-packages=pypi2rpm.command bdist_rpm2 --spec-file=Services.spec --dist-dir=$$(CURDIR)/rpms
