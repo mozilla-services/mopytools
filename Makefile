@@ -30,8 +30,13 @@ test:
 	- $(PYLINT) -f parseable --rcfile=pylintrc $(PKG) > pylint.txt
 
 flake8:
-	@echo; rm -rf tmp
-	@echo; mkdir tmp
+	@echo -n ; $(VIRTUALENV) --no-site-packages --distribute . > /dev/null
+	@echo -n ; $(PYTHON) build.py $(APPNAME) $(DEPS) > /dev/null
+	@echo -n ; $(EZ) nose > /dev/null
+	@echo -n ; rm -rf tmp
+	@echo -n ; mkdir tmp
 	@echo "Testing $(REPO)"
-	@echo; hg clone -q $(REPO) tmp
-	- $(FLAKE8) tmp
+	@echo -n ; hg clone -q $(REPO) tmp
+	- $(FLAKE8) tmp 
+	@echo; rm -rf tmp
+
