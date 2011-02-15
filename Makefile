@@ -32,4 +32,4 @@ test:
 flake8:
 	rm -rf tmp
 	mkdir tmp
-	cd tmp; hg clone $(REPO); ../$(FLAKE8) *
+	- cd tmp; hg clone $(REPO); ../$(FLAKE8) *
