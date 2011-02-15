@@ -30,6 +30,8 @@ test:
 	- $(PYLINT) -f parseable --rcfile=pylintrc $(PKG) > pylint.txt
 
 flake8:
-	rm -rf tmp
-	mkdir tmp
-	- cd tmp; hg clone $(REPO); ../$(FLAKE8) *
+	@echo; rm -rf tmp
+	@echo; mkdir tmp
+	@echo "Testing $(REPO)"
+	@echo; hg clone -q $(REPO) tmp
+	- $(FLAKE8) tmp
