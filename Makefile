@@ -22,7 +22,6 @@ build:
 	$(EZ) pylint
 	$(EZ) coverage
 
-
 test:
 	rm -f coverage.xml
 	- $(COVERAGE) run --source=$(PKG) $(NOSE) $(TESTS); $(COVERAGE) xml
@@ -40,3 +39,15 @@ flake8:
 	- $(FLAKE8) tmp 
 	@echo; rm -rf tmp
 
+coverage:
+	@echo -n ; $(VIRTUALENV) --no-site-packages --distribute . > /dev/null
+	@echo -n ; $(PYTHON) build.py $(APPNAME) $(DEPS) > /dev/null
+	@echo -n ; $(EZ) nose > /dev/null
+	@echo -n ; rm -rf tmp
+	@echo -n ; mkdir tmp
+	@echo "Testing $(REPO)"
+	@echo -n ; hg clone -q $(REPO) tmp
+	@echo -n; cd tmp; @echo -n ;make build
+	@echo -n; cd tmp; $@echo -n ;(COVERAGE) run --source=$(PKG) $(NOSE) $(PKG)/tests
+	@echo -n ; cd tmp; $(COVERAGE) report --omit=$(PKG)/tests/*
+	@echo; rm -rf tmp
