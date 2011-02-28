@@ -48,6 +48,6 @@ coverage:
 	@echo "Testing $(REPO)"
 	@echo -n ; hg clone -q $(REPO) tmp
 	@echo -n; cd tmp; @echo -n ;make build
-	@echo -n; cd tmp; $@echo -n ;(COVERAGE) run --source=$(PKG) $(NOSE) $(PKG)/tests
+	@echo -n; cd tmp; @echo -n ;$(COVERAGE) run --source=$(PKG) $(NOSE) $(PKG)/tests
 	@echo -n ; cd tmp; $(COVERAGE) report --omit=$(PKG)/tests/*
 	@echo; rm -rf tmp
