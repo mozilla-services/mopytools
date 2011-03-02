@@ -29,25 +29,25 @@ test:
 	- $(PYLINT) -f parseable --rcfile=pylintrc $(PKG) > pylint.txt
 
 flake8:
-	@echo -n ; $(VIRTUALENV) --no-site-packages --distribute . > /dev/null
-	@echo -n ; $(PYTHON) build.py $(APPNAME) $(DEPS) > /dev/null
-	@echo -n ; $(EZ) nose > /dev/null
-	@echo -n ; rm -rf tmp
-	@echo -n ; mkdir tmp
+	@$(VIRTUALENV) --no-site-packages --distribute . > /dev/null
+	@$(PYTHON) build.py $(APPNAME) $(DEPS) > /dev/null
+	@$(EZ) nose > /dev/null
+	@rm -rf tmp
+	@mkdir tmp
 	@echo "Testing $(REPO)"
-	@echo -n ; hg clone -q $(REPO) tmp
+	@hg clone -q $(REPO) tmp
 	- $(FLAKE8) tmp 
-	@echo; rm -rf tmp
+	@rm -rf tmp
 
 coverage:
-	@echo -n ; $(VIRTUALENV) --no-site-packages --distribute . > /dev/null
-	@echo -n ; $(PYTHON) build.py $(APPNAME) $(DEPS) > /dev/null
-	@echo -n ; $(EZ) nose > /dev/null
-	@echo -n ; rm -rf tmp
-	@echo -n ; mkdir tmp
-	@echo "Testing $(REPO)"
-	@echo -n ; hg clone -q $(REPO) tmp
-	@echo -n; cd tmp; @echo -n ;make build
-	@echo -n; cd tmp; @echo -n ;$(COVERAGE) run --source=$(PKG) $(NOSE) $(PKG)/tests
-	@echo -n ; cd tmp; $(COVERAGE) report --omit=$(PKG)/tests/*
-	@echo; rm -rf tmp
+	@$(VIRTUALENV) --no-site-packages --distribute . > /dev/null
+	@$(PYTHON) build.py $(APPNAME) $(DEPS) > /dev/null
+	@$(EZ) nose > /dev/null
+	@rm -rf tmp
+	@mkdir tmp
+	@echo "Coverage of $(REPO)"
+	@hg clone -q $(REPO) tmp 
+	cd tmp && make build > /dev/null  2> /dev/null
+	cd tmp && $(COVERAGE) run --source=$(PKG) $(NOSE) $(PKG)/tests > /dev/null 2> /dev/null
+	- cd tmp && $(COVERAGE) report --omit=$(PKG)/tests/*
+	rm -rf tmp
