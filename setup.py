@@ -42,6 +42,9 @@ install_requires = ['Paste', 'PasteScript', 'PasteDeploy', 'Flake8',
 entry_points = """\
 [paste.paster_create_template]
 services_base=mopytools.apptemplate:AppTemplate
+
+[console_scripts]
+buildapp = mopytools.build:main
 """
 
 setup(name='MoPyTools', version=0.1,

@@ -47,7 +47,7 @@ coverage:
 	@mkdir tmp
 	@echo "Coverage of $(REPO)"
 	@hg clone -q $(REPO) tmp 
-	@cd tmp && make build > /dev/null  2> /dev/null
-	@cd tmp && $(COVERAGE) run --source=$(PKG) $(NOSE) $(PKG)/tests > /dev/null 2> /dev/null
+	@cd tmp && make build 
+	@cd tmp && $(COVERAGE) run --source=$(PKG) $(NOSE) $(PKG)/tests 
 	- cd tmp && $(COVERAGE) report --omit=$(PKG)/tests/*
 	@rm -rf tmp
