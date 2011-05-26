@@ -47,7 +47,7 @@ services_base=mopytools.apptemplate:AppTemplate
 buildapp = mopytools.build:main
 """
 
-setup(name='MoPyTools', version=0.1,
+setup(name='MoPyTools', version='0.2',
       author="Tarek Ziade", author_email="tarek@mozilla.com",
       url="http://bitbucket.org/tarek/mopytools",
       description="Set of tools to build Mozilla Services apps",
