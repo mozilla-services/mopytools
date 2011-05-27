@@ -170,5 +170,8 @@ def main(project_name, deps):
 
 if __name__ == '__main__':
     project_name = sys.argv[1]
-    deps = [dep.strip() for dep in sys.argv[2].split(',')]
+    if len(sys.argv) > 2:
+        deps = [dep.strip() for dep in sys.argv[2].split(',')]
+    else:
+        deps = []
     main(project_name, deps)
