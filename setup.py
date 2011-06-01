@@ -49,7 +49,6 @@ buildapp = mopytools.build:main
 """
 
 
-
 setup(name='MoPyTools', version='0.2',
       author="Tarek Ziade", author_email="tarek@mozilla.com",
       url="http://bitbucket.org/tarek/mopytools",
