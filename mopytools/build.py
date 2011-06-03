@@ -38,7 +38,6 @@ import sys
 import subprocess
 
 
-CURDIR = os.path.dirname(__file__)
 REPO_ROOT = 'https://hg.mozilla.org/services/'
 PYTHON = sys.executable
 
@@ -109,7 +108,7 @@ def build_deps(deps, latest_tags):
     location = os.getcwd()
     # do we want the latest tags ?
     try:
-        deps_dir = os.path.abspath(os.path.join(CURDIR, 'deps'))
+        deps_dir = os.path.abspath(os.path.join(location, 'deps'))
         if not os.path.exists(deps_dir):
             os.mkdir(deps_dir)
 
