@@ -36,11 +36,15 @@
 import os
 import sys
 import subprocess
+from optparse import OptionParser
+from ConfigParser import ConfigParser
+import socket
+from urlparse import urlparse
 
 
-CURDIR = os.path.dirname(__file__)
 REPO_ROOT = 'https://hg.mozilla.org/services/'
 PYTHON = sys.executable
+PYPI = 'http://pypi.python.org/simple'
 
 
 def verify_tag(tag):
@@ -109,7 +113,7 @@ def build_deps(deps, latest_tags):
     location = os.getcwd()
     # do we want the latest tags ?
     try:
-        deps_dir = os.path.abspath(os.path.join(CURDIR, 'deps'))
+        deps_dir = os.path.abspath(os.path.join(location, 'deps'))
         if not os.path.exists(deps_dir):
             os.mkdir(deps_dir)
 
@@ -136,7 +140,78 @@ def _has_spec():
     return len(specs)
 
 
-def main(project_name, deps):
+def _setup_pypi(pypi, extras=None, strict=False):
+    # setup distutils.cfg
+    import distutils
+    location = os.path.dirname(distutils.__file__)
+    cfg = os.path.join(location, 'distutils.cfg')
+    if os.path.exists(cfg):
+        os.remove(cfg)
+
+    parser = ConfigParser()
+    parser.read(cfg)
+
+    if 'easy_install' not in parser.sections():
+        parser.add_section('easy_install')
+
+    parser.set('easy_install', 'index_url', pypi)
+    allowed_hosts = [urlparse(pypi)[1]]
+
+    if extras:
+        parser.set('easy_install', 'find_links', extras)
+        allowed_hosts.append(urlparse(extras)[1])
+
+    if strict:
+        parser.set('easy_install', 'allow_hosts', ','.join(allowed_hosts))
+
+    with open(cfg, 'w') as cfg:
+        parser.write(cfg)
+
+
+def timeout(duration):
+    def _timeout(func):
+        def __timeout(*args, **kw):
+            old = socket.getdefaulttimeout()
+            socket.setdefaulttimeout(duration)
+            try:
+                return func(*args, **kw)
+            finally:
+                socket.setdefaulttimeout(old)
+        return __timeout
+    return _timeout
+
+
+@timeout(4.0)
+def main():
+    parser = OptionParser()
+    parser.add_option("-i", "--index", dest="index",
+                      help="Pypi index", default=PYPI)
+
+    parser.add_option("-e", "--extras", dest="extras",
+                      help="Extra location for packages",
+                      default=None)
+
+    parser.add_option("-s", "--strict-index", dest="strict",
+                      action="store_true",
+                      help="Prevent brwosing external websites",
+                      default=False)
+
+    options, args = parser.parse_args()
+
+    if len(args) == 0:
+        parser.print_help()
+        sys.exit(1)
+
+    project_name = args[0]
+
+    if len(args) > 1:
+        deps = [dep.strip() for dep in args[1].split(',')]
+    else:
+        deps = []
+
+    # set pypi location
+    _setup_pypi(options.index, options.extras, options.strict)
+
     # check the provided values in the environ
     latest_tags = 'LATEST_TAGS' in os.environ
 
@@ -169,9 +244,4 @@ def main(project_name, deps):
 
 
 if __name__ == '__main__':
-    project_name = sys.argv[1]
-    if len(sys.argv) > 2:
-        deps = [dep.strip() for dep in sys.argv[2].split(',')]
-    else:
-        deps = []
-    main(project_name, deps)
+    main()

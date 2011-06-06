@@ -36,7 +36,7 @@
 from setuptools import setup, find_packages
 
 
-install_requires = ['Paste', 'PasteScript', 'PasteDeploy', 'Flake8',
+install_requires = ['Paste', 'PasteScript', 'PasteDeploy', 'flake8',
                     'virtualenv']
 
 
