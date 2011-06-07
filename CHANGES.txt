@@ -1,0 +1,12 @@
+0.4
+===
+
+- The build script now supports three options:
+
+  -i: PyPI Simple index location (for mirroring)
+  -e: extra location (for archives not present at PyPI)
+  -s: flag to indicate that any URL that's not under PyPI or the extra
+      location is disallowed during the fetching
+
+
+
