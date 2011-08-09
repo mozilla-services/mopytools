@@ -37,7 +37,7 @@ from setuptools import setup, find_packages
 
 
 install_requires = ['Paste', 'PasteScript', 'PasteDeploy', 'flake8',
-                    'virtualenv']
+                    'virtualenv', 'pypi2rpm']
 
 
 entry_points = """\
@@ -46,7 +46,9 @@ services_base=mopytools.apptemplate:AppTemplate
 
 [console_scripts]
 buildapp = mopytools.build:main
+buildrpms = mopytools.build:buildrpms
 """
+
 
 setup(name='MoPyTools', version='0.4',
       author="Tarek Ziade", author_email="tarek@mozilla.com",

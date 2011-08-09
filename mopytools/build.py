@@ -41,6 +41,8 @@ from ConfigParser import ConfigParser
 import socket
 from urlparse import urlparse
 
+from pypi2rpm import main as pypi2rpm
+
 
 REPO_ROOT = 'https://hg.mozilla.org/services/'
 PYTHON = sys.executable
@@ -181,8 +183,7 @@ def timeout(duration):
     return _timeout
 
 
-@timeout(4.0)
-def main():
+def _get_options(extra_options):
     parser = OptionParser()
     parser.add_option("-i", "--index", dest="index",
                       help="Pypi index", default=PYPI)
@@ -193,8 +194,11 @@ def main():
 
     parser.add_option("-s", "--strict-index", dest="strict",
                       action="store_true",
-                      help="Prevent brwosing external websites",
+                      help="Prevent browsing external websites",
                       default=False)
+
+    for optargs, optkw in extra_options:
+        parser.add_option(*optargs, **optkw)
 
     options, args = parser.parse_args()
 
@@ -202,15 +206,21 @@ def main():
         parser.print_help()
         sys.exit(1)
 
+    # set pypi location
+    _setup_pypi(options.index, options.extras, options.strict)
+
+    return options, args
+
+
+@timeout(4.0)
+def main():
+    options, args = _get_options()
     project_name = args[0]
 
     if len(args) > 1:
         deps = [dep.strip() for dep in args[1].split(',')]
     else:
         deps = []
-
-    # set pypi location
-    _setup_pypi(options.index, options.extras, options.strict)
 
     # check the provided values in the environ
     latest_tags = 'LATEST_TAGS' in os.environ
@@ -241,6 +251,33 @@ def main():
             sys.exit(1)
 
     build_app(project_name, latest_tags, deps)
+
+
+def buildrpms():
+    """Build RPMs using PyPI2RPM and a pip-style req list"""
+    def _split(line):
+        tokens = ['==', '>=', '<=', '>', '<', '!=']
+        for token in tokens:
+            if token in line:
+                if token != '==':
+                    raise NotImplementedError(line)
+
+                app, version = line.split(token, 1)
+                return app.strip(), version.strip()
+        return line.strip(), None
+
+    distargs = ("-d", "--dist-dir")
+    distoptions = {"dest": "dist_dir",
+                   "help": "Distributions directory",
+                   "default": None}
+    options, args = _get_options([(distargs, distoptions)])
+    req_file = args[0]
+    # we have a requirement file, we can go ahead and feed pypi2rpm with it
+    with open(req_file) as f:
+        for line in f.readlines():
+            project, version = _split(line)
+            print("Building RPM for %s" % project)
+            pypi2rpm(project, options.dist_dir, version, options.index)
 
 
 if __name__ == '__main__':
