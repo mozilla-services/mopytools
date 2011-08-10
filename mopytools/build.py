@@ -59,13 +59,13 @@ def _get_tags(prefix=TAG_PREFIX):
             if tag_.startswith(TAG_PREFIX)]
 
 
-def verify_tag(tag):
+def tag_exists(tag):
     if tag == 'tip' or tag.isdigit():
         return True
     return tag in _get_tags()
 
 
-def get_tag(channel):
+def get_channel_tag(channel):
     if channel == 'dev':
         return 'tip'
 
@@ -116,13 +116,12 @@ def _envname(name):
 
 def _update_cmd(project, channel="prod", specific_tag=False):
     if not specific_tag:
-        return 'hg up -r "%s"' % get_tag(channel)
+        return 'hg up -r "%s"' % get_channel_tag(channel)
 
     # looking for an environ with a specific tag or rev
     rev = os.environ.get(_envname(project))
     if rev is not None:
-
-        if not verify_tag(rev):
+        if not tag_exists(rev):
             print('Unknown tag or revision: %s' % rev)
             sys.exit(1)
 

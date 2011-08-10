@@ -39,7 +39,7 @@ import unittest
 import subprocess
 import StringIO
 
-from mopytools.build import get_tag, verify_tag
+from mopytools.build import get_channel_tag, tag_exists
 
 
 _CMDS = {"hg tags": """\
@@ -68,12 +68,12 @@ class TestBuild(unittest.TestCase):
         subprocess.Popen = self.old
 
     def test_get_tag(self):
-        self.assertEqual(get_tag('dev'), 'tip')
-        self.assertEqual(get_tag('prod'), 'rpm-0.4')
-        self.assertEqual(get_tag('stage'), 'rpm-0.5rc1')
+        self.assertEqual(get_channel_tag('dev'), 'tip')
+        self.assertEqual(get_channel_tag('prod'), 'rpm-0.4')
+        self.assertEqual(get_channel_tag('stage'), 'rpm-0.5rc1')
 
-    def test_verify_tag(self):
-        self.assertTrue(verify_tag('tip'))
-        self.assertTrue(verify_tag('rpm-0.4'))
-        self.assertTrue(verify_tag('rpm-0.5rc1'))
-        self.assertFalse(verify_tag('xxx'))
+    def test_tag_exists(self):
+        self.assertTrue(tag_exists('tip'))
+        self.assertTrue(tag_exists('rpm-0.4'))
+        self.assertTrue(tag_exists('rpm-0.5rc1'))
+        self.assertFalse(tag_exists('xxx'))
