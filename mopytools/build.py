@@ -40,6 +40,8 @@ from optparse import OptionParser
 from ConfigParser import ConfigParser
 import socket
 from urlparse import urlparse
+from StringIO import StringIO
+import re
 
 from pypi2rpm import main as pypi2rpm
 from distutils2.version import NormalizedVersion, IrrationalVersionError
@@ -112,34 +114,33 @@ def _run(command):
                           stderr=subprocess.PIPE)
     stream_over = 0
     while stream_over < 2:
-        out = sb.stdout.readline()
-        if out == '':
-            stream_over += 1
-
-        err = sb.stderr.readline()
-        if err == '':
-            stream_over += 1
-
         sys.stdout.write('.')
         sys.stdout.flush()
 
+        out = sb.stdout.readline()
+        if out.strip() == '':
+            stream_over += 1
+        err = sb.stderr.readline()
+        if err.strip() == '':
+            stream_over += 1
 
 def _envname(name):
     return name.upper().replace('-', '_')
 
 
-def _update_cmd(project, channel="prod", specific_tag=False):
+def _update_cmd(project=None, channel="prod", specific_tag=False):
     if not specific_tag:
         return 'hg up -r "%s"' % get_channel_tag(channel)
 
     # looking for an environ with a specific tag or rev
-    rev = os.environ.get(_envname(project))
-    if rev is not None:
-        if not tag_exists(rev):
-            print('Unknown tag or revision: %s' % rev)
-            sys.exit(1)
+    if project is not None:
+        rev = os.environ.get(_envname(project))
+        if rev is not None:
+            if not tag_exists(rev):
+                print('Unknown tag or revision: %s' % rev)
+                sys.exit(1)
 
-        return 'hg up -r "%s"' % rev
+            return 'hg up -r "%s"' % rev
     return 'hg up'
 
 
@@ -243,8 +244,28 @@ def build_deps(deps, channel, specific_tags):
         os.chdir(location)
 
 
+_URL = re.compile('^Url: (.*?)$', re.M|re.DOTALL)
+
+
+def get_project_name():
+    if is_meta_project():
+        return None
+    spec_file = None
+    for file_ in os.listdir(os.getcwd()):
+        if os.path.splitext(file_)[-1] == '.spec':
+            spec_file = file_
+            break
+    if spec_file is not None:
+        with open(spec_file) as f:
+            data = f.read()
+            name = _URL.findall(data)
+            if len(name) == 1:
+                return name[0].split('/')[-1]
+    return spec_file
+
+
 def is_meta_project():
-    for file_ in os.listdir('.'):
+    for file_ in os.listdir(os.getcwd()):
         if os.path.splitext(file_)[-1] == '.spec':
             return False
     return True
@@ -309,17 +330,13 @@ def _get_options(extra_options=None):
 
     parser.add_option("-c", "--channel", dest="channel",
                       help="Channel to build",
-                      default="prod", type="choice",
-                      choices=["prod", "dev", "stage"])
+                      default="last", type="choice",
+                      choices=["prod", "dev", "stage", "last"])
 
     for optargs, optkw in extra_options:
         parser.add_option(*optargs, **optkw)
 
     options, args = parser.parse_args()
-
-    if len(args) == 0:
-        parser.print_help()
-        sys.exit(1)
 
     # set pypi location
     _setup_pypi(options.index, options.extras, options.strict)
@@ -327,10 +344,22 @@ def _get_options(extra_options=None):
     return options, args
 
 
+def save_last_channel(channel):
+    with open('.channel', 'w') as f:
+        f.write(channel)
+
+
+def get_last_channel():
+    if not os.path.exists('.channel'):
+        return 'prod'
+    with open('.channel') as f:
+        return f.read()
+
+
 @timeout(4.0)
 def buildapp():
     options, args = _get_options()
-    project_name = args[0]
+    #project_name = args[0]
 
     if len(args) > 1:
         deps = [dep.strip() for dep in args[1].split(',')]
@@ -344,8 +373,15 @@ def buildapp():
 
     # get the channel
     channel = options.channel.lower()
+    if channel == 'last':
+        channel = get_last_channel()
+
+    save_last_channel(channel)
+    print("The current channel is %s." % channel)
+
     # if we have some tags in the environ, check that they are all defined
     projects = list(deps)
+    project_name = get_project_name()
 
     # is the root a project itself or just a placeholder ?
     if not is_meta_project():
@@ -394,13 +430,29 @@ def buildrpms():
                    "help": "Distributions directory",
                    "default": None}
     options, args = _get_options([(distargs, distoptions)])
-    req_file = args[0]
+
+    # get the channel
+    channel = options.channel.lower()
+    if channel == 'last':
+        channel = get_last_channel()
+
+    print('The current channel is %s.' % channel)
+    save_last_channel(channel)
+
+    req_file = os.path.join(os.getcwd(), '%s-reqs.txt' % channel)
+    if not os.path.exists(req_file):
+        print("Can't find the req file for the %s channel." % channel)
+        sys.exit(0)
+
     # we have a requirement file, we can go ahead and feed pypi2rpm with it
     with open(req_file) as f:
         for line in f.readlines():
             project, version = _split(line)
-            print("Building RPM for %s" % project)
+            sys.stdout.write("Building RPM for %s " % project)
+            sys.stdout.flush()
             pypi2rpm(project, options.dist_dir, version, options.index)
+            sys.stdout.write(' [ok]\n')
+            sys.stdout.flush()
 
 
 if __name__ == '__main__':
