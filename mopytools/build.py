@@ -107,7 +107,7 @@ def get_channel_tag(channel):
 
 def _run(command):
     print(command)
-    os.system(command)
+    subprocess.check_call(command.split())
 
 
 def _envname(name):
@@ -134,7 +134,7 @@ def build_app(name, channel, deps, specific_tags):
     build_deps(deps, channel, specific_tags)
 
     # if the current repo is a meta-repo, running tip on it
-    if not _has_spec():
+    if is_meta_project():
         specific_tags = False
         channel = "dev"
 
@@ -169,10 +169,11 @@ def build_deps(deps, channel, specific_tags):
         os.chdir(location)
 
 
-def _has_spec():
-    specs = [file_ for file_ in os.listdir('.')
-             if file_.endswith('.spec')]
-    return len(specs)
+def is_meta_project():
+    for file_ in os.listdir('.'):
+        if os.path.splitext(file_)[-1] == '.spec':
+            return False
+    return True
 
 
 def _setup_pypi(pypi, extras=None, strict=False):
@@ -272,7 +273,7 @@ def buildapp():
     projects = list(deps)
 
     # is the root a project itself or just a placeholder ?
-    if _has_spec():
+    if not is_meta_project():
         projects.append(project_name)
 
     tags = {}
