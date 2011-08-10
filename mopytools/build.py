@@ -108,15 +108,20 @@ def get_channel_tag(channel):
 
 
 def _run(command):
-    sb = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-    for line in sb.stdout:
+    sb = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE)
+    stream_over = 0
+    while stream_over < 2:
+        out = sb.stdout.readline()
+        if out == '':
+            stream_over += 1
+
+        err = sb.stderr.readline()
+        if err == '':
+            stream_over += 1
+
         sys.stdout.write('.')
         sys.stdout.flush()
-    sys.stdout.write('\n')
-    sys.stdout.flush()
-
-    #return sb.stdout.read()
-    #subprocess.check_call(command.split())
 
 
 def _envname(name):
@@ -138,21 +143,63 @@ def _update_cmd(project, channel="prod", specific_tag=False):
     return 'hg up'
 
 
+_LEVEL = -1
+
+
+def step(text):
+    def _step(func):
+        def __step(*args, **kw):
+            global _LEVEL
+            _LEVEL += 1
+            fstep = step = _LEVEL * 2 * " "
+            if _LEVEL > 0:
+                fstep = '\n' + step
+            sys.stdout.write(fstep + text + ' ')
+            sys.stdout.flush()
+            try:
+                res = func(*args, **kw)
+                if _LEVEL > 0:
+                    sys.stdout.write(step + '[ok]')
+                else:
+                    sys.stdout.write(step + '\n[done]')
+                sys.stdout.flush()
+                return res
+            except:
+                sys.stdout.write('[fail]')
+                sys.stdout.flush()
+                raise
+            finally:
+                _LEVEL -= 1
+                if _LEVEL < 0:
+                    print('')
+        return __step
+    return _step
+
+
+@step('Building External dependencies')
 def build_external_deps(channel):
     # looking for a req file
-    sys.stdout.write('    Building External dependencies ')
     reqname = '%s-reqs.txt' % channel
     filename = os.path.join(os.path.dirname(__file__), reqname)
     if not os.path.exists(filename):
-        sys.stdout.write('\n')
         return
     _run('%s -r %s' % (PIP, filename))
 
 
-def build_app(name, channel, deps, specific_tags):
-    print('Building %s :' % name)
-    sys.stdout.write('    Updating the repo...')
+@step('Updating the repo')
+def updating_repo(name, channel, specific_tags):
     _run(_update_cmd(name, channel, specific_tags))
+
+
+@step('Now building the app itself')
+def build_core_app():
+    _run('%s setup.py develop' % PYTHON)
+
+
+@step('Building the app')
+def build_app(name, channel, deps, specific_tags):
+    # updating the repo
+    updating_repo(name, channel, specific_tags)
 
     # building internal deps first
     build_deps(deps, channel, specific_tags)
@@ -166,14 +213,12 @@ def build_app(name, channel, deps, specific_tags):
         channel = "dev"
 
     # build the app now
-    sys.stdout.write('    Now building the app itself')
-    _run('%s setup.py develop' % PYTHON)
-    print('Done.')
+    build_core_app()
 
 
+@step('Building Services dependencies')
 def build_deps(deps, channel, specific_tags):
     """Will make sure dependencies are up-to-date"""
-    print('    Building Services dependencies')
     location = os.getcwd()
     # do we want the latest tags ?
     try:
