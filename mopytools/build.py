@@ -42,11 +42,13 @@ import socket
 from urlparse import urlparse
 
 from pypi2rpm import main as pypi2rpm
+from distutils2.version import NormalizedVersion, IrrationalVersionError
 
 
 REPO_ROOT = 'https://hg.mozilla.org/services/'
 PYTHON = sys.executable
 PYPI = 'http://pypi.python.org/simple'
+TAG_PREFIX = 'rpm-'
 
 
 def verify_tag(tag):
@@ -60,16 +62,48 @@ def verify_tag(tag):
     return tag in tags
 
 
-def get_latest_tag():
+def get_tag(channel):
+    if channel == 'dev':
+        return 'tip'
+
     sub = subprocess.Popen('hg tags', shell=True, stdout=subprocess.PIPE)
     tags = [tag for tag in
                 [line.split()[0] for line in
                  sub.stdout.read().strip().split('\n')]
-            if tag.startswith('rpm-')]
+            if tag.startswith(TAG_PREFIX)]
+
     if len(tags) == 0:
         raise ValueError('Could not find a rpm tag')
 
-    return tags[0]
+    # looking for the latest channel tag
+    #
+    # - prod tags are final tags
+    # - stage tags is the latest rc tags that is
+    #   after the latest prod tag if any, or prod tag
+    def is_prod(tag):
+        try:
+            return NormalizedVersion(version).is_final
+        except IrrationalVersionError:
+            return False
+
+    def is_stage_or_prod(tag):
+        try:
+            NormalizedVersion(version)
+            return True
+        except IrrationalVersionError:
+            return False
+
+    if channel == "prod":
+        selector = is_prod
+    else:
+        selector = is_stage_or_prod
+
+    for tag in tags:
+        version = tag[len('rpm-'):]
+        if selector(version):
+            return tag
+
+    raise ValueError('Could not find a prod tag')
 
 
 def _run(command):
@@ -81,36 +115,37 @@ def _envname(name):
     return name.upper().replace('-', '_')
 
 
-def _update_cmd(project, latest_tags=False):
-    if latest_tags:
-        return 'hg up -r "%s"' % get_latest_tag()
-    else:
+def _update_cmd(project, channel="prod", specific_tag=False):
+    if not specific_tag:
+        return 'hg up -r "%s"' % get_tag(channel)
 
-        # looking for an environ with a specific tag or rev
-        rev = os.environ.get(_envname(project))
-        if rev is not None:
+    # looking for an environ with a specific tag or rev
+    rev = os.environ.get(_envname(project))
+    if rev is not None:
 
-            if not verify_tag(rev):
-                print('Unknown tag or revision: %s' % rev)
-                sys.exit(1)
+        if not verify_tag(rev):
+            print('Unknown tag or revision: %s' % rev)
+            sys.exit(1)
 
-            return 'hg up -r "%s"' % rev
-        return 'hg up'
+        return 'hg up -r "%s"' % rev
+    return 'hg up'
 
 
-def build_app(name, latest_tags, deps):
+def build_app(name, channel, deps, specific_tags):
     # building deps first
-    build_deps(deps, latest_tags)
+    build_deps(deps, channel, specific_tags)
+
+    # if the current repo is a meta-repo, running tip on it
+    if not _has_spec():
+        specific_tags = False
+        channel = "dev"
 
     # build the app now
-    if not _has_spec():
-        latest_tags = False
-
-    _run(_update_cmd(name, latest_tags))
+    _run(_update_cmd(name, channel, specific_tags))
     _run('%s setup.py develop' % PYTHON)
 
 
-def build_deps(deps, latest_tags):
+def build_deps(deps, channel, specific_tags):
     """Will make sure dependencies are up-to-date"""
     location = os.getcwd()
     # do we want the latest tags ?
@@ -129,7 +164,7 @@ def build_deps(deps, latest_tags):
                 _run('hg clone %s %s' % (repo, target))
                 os.chdir(target)
 
-            update_cmd = _update_cmd(dep, latest_tags)
+            update_cmd = _update_cmd(dep, channel, specific_tags)
             _run(update_cmd)
             _run('%s setup.py develop' % PYTHON)
     finally:
@@ -197,6 +232,11 @@ def _get_options(extra_options):
                       help="Prevent browsing external websites",
                       default=False)
 
+    parser.add_options("-c", "--channel", dest="channel",
+                       help="Channel to build",
+                       default="prod", type="choice",
+                       choices=["prod", "dev", "stage"])
+
     for optargs, optkw in extra_options:
         parser.add_option(*optargs, **optkw)
 
@@ -213,7 +253,7 @@ def _get_options(extra_options):
 
 
 @timeout(4.0)
-def main():
+def buildapp():
     options, args = _get_options()
     project_name = args[0]
 
@@ -223,36 +263,44 @@ def main():
         deps = []
 
     # check the provided values in the environ
-    latest_tags = 'LATEST_TAGS' in os.environ
+    #latest_tags = 'LATEST_TAGS' in os.environ
+    if 'LATEST_TAGS' in os.environ:
+        raise ValueError("LATEST_TAGS is deprecated, use channels")
 
-    if not latest_tags:
-        # if we have some tags in the environ, check that they are all defined
-        projects = list(deps)
+    # get the channel
+    channel = options.channel.lower()
 
-        # is the root a project itself or just a placeholder ?
-        if _has_spec():
-            projects.append(project_name)
+    # if we have some tags in the environ, check that they are all defined
+    projects = list(deps)
 
-        tags = {}
-        missing = 0
-        for project in projects:
-            tag = _envname(project)
-            if tag in os.environ:
-                tags[tag] = os.environ[tag]
-            else:
-                tags[tag] = 'Not provided'
-                missing += 1
+    # is the root a project itself or just a placeholder ?
+    if _has_spec():
+        projects.append(project_name)
 
-        # we want all tag or no tag
-        if missing > 0 and missing < len(projects):
-            print("You did not specify all tags: ")
-            for project, tag in tags.items():
-                print('    %s: %s' % (project, tag))
-            sys.exit(1)
+    tags = {}
+    missing = 0
+    for project in projects:
+        tag = _envname(project)
+        if tag in os.environ:
+            tags[tag] = os.environ[tag]
+        else:
+            tags[tag] = 'Not provided'
+            missing += 1
 
-    build_app(project_name, latest_tags, deps)
+    # we want all tag or no tag
+    if missing > 0 and missing < len(projects):
+        print("You did not specify all tags: ")
+        for project, tag in tags.items():
+            print('    %s: %s' % (project, tag))
+
+        print("Also, consider using channels")
+        sys.exit(1)
+
+    specific_tags = missing == len(projects)
+    build_app(project_name, channel, deps, specific_tags)
 
 
+@timeout(4.0)
 def buildrpms():
     """Build RPMs using PyPI2RPM and a pip-style req list"""
     def _split(line):
@@ -281,4 +329,4 @@ def buildrpms():
 
 
 if __name__ == '__main__':
-    main()
+    buildapp()

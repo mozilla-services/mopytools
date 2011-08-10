@@ -9,7 +9,7 @@
 # Software distributed under the License is distributed on an "AS IS" basis,
 # WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
 # for the specific language governing rights and limitations under the
-# License.
+# License
 #
 # The Original Code is Sync Server
 #
@@ -23,7 +23,7 @@
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
 # the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
+# in which case the provisions of the GPL or the LGPL are applicable instea
 # of those above. If you wish to allow use of your version of this file only
 # under the terms of either the GPL or the LGPL, and not to allow others to
 # use your version of this file under the terms of the MPL, indicate your
@@ -33,28 +33,41 @@
 # the terms of any one of the MPL, the GPL or the LGPL.
 #
 # ***** END LICENSE BLOCK *****
-from setuptools import setup, find_packages
-
-
-install_requires = ['Paste', 'PasteScript', 'PasteDeploy', 'flake8',
-                    'distutils2',
-                    'virtualenv', 'pypi2rpm']
-
-
-entry_points = """\
-[paste.paster_create_template]
-services_base=mopytools.apptemplate:AppTemplate
-
-[console_scripts]
-buildapp = mopytools.build:buildapp
-buildrpms = mopytools.build:buildrpms
+""" tests for mopytools.build
 """
+import unittest
+import subprocess
+import StringIO
+
+from mopytools.build import get_tag
 
 
-setup(name='MoPyTools', version='0.4',
-      author="Tarek Ziade", author_email="tarek@mozilla.com",
-      url="http://bitbucket.org/tarek/mopytools",
-      description="Set of tools to build Mozilla Services apps",
-      packages=find_packages(),
-      install_requires=install_requires,
-      entry_points=entry_points)
+_CMDS = {"hg tags": """\
+tip                               34:7d3a88af29ec
+rpm-0.5rc1                        33:51e4cfb38a04
+rpm-0.4                           32:c56849d09a4c
+rpm-0.4rc2                        32:51e4cfb38a04
+rpm-0.4rc1                        32:51e4cfb38a04
+rpm-0.3                           28:51e4cfb38a04
+rpm-0.2                           9:d6f665b7d6a3"""}
+
+
+class FakePopen(object):
+    def __init__(self, command, *args, **kw):
+        self.cmd = command
+        self.stdout = StringIO.StringIO(_CMDS[command])
+
+
+class TestBuild(unittest.TestCase):
+
+    def setUp(self):
+        self.old = subprocess.Popen
+        subprocess.Popen = FakePopen
+
+    def tearDown(self):
+        subprocess.Popen = self.old
+
+    def test_get_tag(self):
+        self.assertEqual(get_tag('dev'), 'tip')
+        self.assertEqual(get_tag('prod'), 'rpm-0.4')
+        self.assertEqual(get_tag('stage'), 'rpm-0.5rc1')
