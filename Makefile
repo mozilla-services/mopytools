@@ -44,10 +44,7 @@ build:
 	$(EZ) coverage
 
 test:
-	rm -f coverage.xml
-	- $(COVERAGE) run --source=$(PKG) $(NOSE) $(TESTS); $(COVERAGE) xml
-	rm -f pylint.txt
-	- $(PYLINT) -f parseable --rcfile=pylintrc $(PKG) > pylint.txt
+	$(NOSE) $(TESTS)
 
 flake8:
 	@$(VIRTUALENV) --no-site-packages --distribute . > /dev/null

@@ -47,6 +47,7 @@ from distutils2.version import NormalizedVersion, IrrationalVersionError
 
 REPO_ROOT = 'https://hg.mozilla.org/services/'
 PYTHON = sys.executable
+PIP = os.path.join(os.path.dirname(PYTHON), 'pip')
 PYPI = 'http://pypi.python.org/simple'
 TAG_PREFIX = 'rpm-'
 
@@ -72,7 +73,8 @@ def get_channel_tag(channel):
     tags = _get_tags()
 
     if len(tags) == 0:
-        raise ValueError('Could not find any rpm- tag')
+        print ('Could not find any rpm-* tag')
+        sys.exit(0)
 
     # looking for the latest channel tag
     #
@@ -106,8 +108,15 @@ def get_channel_tag(channel):
 
 
 def _run(command):
-    print(command)
-    subprocess.check_call(command.split())
+    sb = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    for line in sb.stdout:
+        sys.stdout.write('.')
+        sys.stdout.flush()
+    sys.stdout.write('\n')
+    sys.stdout.flush()
+
+    #return sb.stdout.read()
+    #subprocess.check_call(command.split())
 
 
 def _envname(name):
@@ -129,9 +138,27 @@ def _update_cmd(project, channel="prod", specific_tag=False):
     return 'hg up'
 
 
+def build_external_deps(channel):
+    # looking for a req file
+    sys.stdout.write('    Building External dependencies ')
+    reqname = '%s-reqs.txt' % channel
+    filename = os.path.join(os.path.dirname(__file__), reqname)
+    if not os.path.exists(filename):
+        sys.stdout.write('\n')
+        return
+    _run('%s -r %s' % (PIP, filename))
+
+
 def build_app(name, channel, deps, specific_tags):
-    # building deps first
+    print('Building %s :' % name)
+    sys.stdout.write('    Updating the repo...')
+    _run(_update_cmd(name, channel, specific_tags))
+
+    # building internal deps first
     build_deps(deps, channel, specific_tags)
+
+    # building the external deps now
+    build_external_deps(channel)
 
     # if the current repo is a meta-repo, running tip on it
     if is_meta_project():
@@ -139,12 +166,14 @@ def build_app(name, channel, deps, specific_tags):
         channel = "dev"
 
     # build the app now
-    _run(_update_cmd(name, channel, specific_tags))
+    sys.stdout.write('    Now building the app itself')
     _run('%s setup.py develop' % PYTHON)
+    print('Done.')
 
 
 def build_deps(deps, channel, specific_tags):
     """Will make sure dependencies are up-to-date"""
+    print('    Building Services dependencies')
     location = os.getcwd()
     # do we want the latest tags ?
     try:
@@ -270,7 +299,6 @@ def buildapp():
 
     # get the channel
     channel = options.channel.lower()
-
     # if we have some tags in the environ, check that they are all defined
     projects = list(deps)
 
@@ -279,11 +307,12 @@ def buildapp():
         projects.append(project_name)
 
     tags = {}
-    missing = 0
+    missing = provided = 0
     for project in projects:
         tag = _envname(project)
         if tag in os.environ:
             tags[tag] = os.environ[tag]
+            provided += 1
         else:
             tags[tag] = 'Not provided'
             missing += 1
@@ -297,7 +326,7 @@ def buildapp():
         print("Also, consider using channels")
         sys.exit(1)
 
-    specific_tags = missing == len(projects)
+    specific_tags = provided == len(projects) and missing == 0
     build_app(project_name, channel, deps, specific_tags)
 
 
