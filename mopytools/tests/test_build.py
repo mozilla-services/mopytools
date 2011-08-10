@@ -38,9 +38,11 @@
 import unittest
 import subprocess
 import StringIO
+import ConfigParser
+import sys
 
-from mopytools.build import get_channel_tag, tag_exists
-
+from mopytools.build import get_channel_tag, tag_exists, _get_options
+from mopytools import build
 
 _CMDS = {"hg tags": """\
 tip                               34:7d3a88af29ec
@@ -52,20 +54,40 @@ rpm-0.3                           28:51e4cfb38a04
 rpm-0.2                           9:d6f665b7d6a3"""}
 
 
+_CFG = """\
+[easy_install]
+index_url = http://pypi.python.org/simple
+
+"""
+
+
 class FakePopen(object):
     def __init__(self, command, *args, **kw):
         self.cmd = command
         self.stdout = StringIO.StringIO(_CMDS[command])
 
 
+class ParserNoWrite(ConfigParser.ConfigParser):
+    writes = []
+
+    def write(self, cfg):
+        stream = StringIO.StringIO()
+        ConfigParser.ConfigParser.write(self, stream)
+        stream.seek(0)
+        self.writes.append((cfg, stream.read()))
+
+
 class TestBuild(unittest.TestCase):
 
     def setUp(self):
-        self.old = subprocess.Popen
+        self.old_po = subprocess.Popen
         subprocess.Popen = FakePopen
+        self.old_cp = ConfigParser
+        build.ConfigParser = ParserNoWrite
 
     def tearDown(self):
-        subprocess.Popen = self.old
+        subprocess.Popen = self.old_po
+        build.ConfigParser = self.old_cp
 
     def test_get_tag(self):
         self.assertEqual(get_channel_tag('dev'), 'tip')
@@ -77,3 +99,14 @@ class TestBuild(unittest.TestCase):
         self.assertTrue(tag_exists('rpm-0.4'))
         self.assertTrue(tag_exists('rpm-0.5rc1'))
         self.assertFalse(tag_exists('xxx'))
+
+    def test_distutils_setup(self):
+        old_argv = sys.argv[:]
+        sys.argv[:] = ['whatever', 'is_done']
+        try:
+            options, args = _get_options()
+        finally:
+            sys.argv[:] = old_argv
+
+        result = ParserNoWrite.writes[-1][1]
+        self.assertEquals(result, _CFG)

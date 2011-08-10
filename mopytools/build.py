@@ -217,7 +217,9 @@ def timeout(duration):
     return _timeout
 
 
-def _get_options(extra_options):
+def _get_options(extra_options=None):
+    if extra_options is None:
+        extra_options = []
     parser = OptionParser()
     parser.add_option("-i", "--index", dest="index",
                       help="Pypi index", default=PYPI)
@@ -231,10 +233,10 @@ def _get_options(extra_options):
                       help="Prevent browsing external websites",
                       default=False)
 
-    parser.add_options("-c", "--channel", dest="channel",
-                       help="Channel to build",
-                       default="prod", type="choice",
-                       choices=["prod", "dev", "stage"])
+    parser.add_option("-c", "--channel", dest="channel",
+                      help="Channel to build",
+                      default="prod", type="choice",
+                      choices=["prod", "dev", "stage"])
 
     for optargs, optkw in extra_options:
         parser.add_option(*optargs, **optkw)
