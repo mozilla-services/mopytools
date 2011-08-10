@@ -99,7 +99,7 @@ def get_tag(channel):
         selector = is_stage_or_prod
 
     for tag in tags:
-        version = tag[len('rpm-'):]
+        version = tag[len(TAG_PREFIX):]
         if selector(version):
             return tag
 
