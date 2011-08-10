@@ -40,7 +40,6 @@ from optparse import OptionParser
 from ConfigParser import ConfigParser
 import socket
 from urlparse import urlparse
-from StringIO import StringIO
 import re
 
 from pypi2rpm import main as pypi2rpm
@@ -123,6 +122,7 @@ def _run(command):
         err = sb.stderr.readline()
         if err.strip() == '':
             stream_over += 1
+
 
 def _envname(name):
     return name.upper().replace('-', '_')
@@ -244,7 +244,7 @@ def build_deps(deps, channel, specific_tags):
         os.chdir(location)
 
 
-_URL = re.compile('^Url: (.*?)$', re.M|re.DOTALL)
+_URL = re.compile('^Url: (.*?)$', re.M | re.DOTALL)
 
 
 def get_project_name():
