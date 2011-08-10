@@ -39,7 +39,7 @@ import unittest
 import subprocess
 import StringIO
 
-from mopytools.build import get_tag
+from mopytools.build import get_tag, verify_tag
 
 
 _CMDS = {"hg tags": """\
@@ -71,3 +71,9 @@ class TestBuild(unittest.TestCase):
         self.assertEqual(get_tag('dev'), 'tip')
         self.assertEqual(get_tag('prod'), 'rpm-0.4')
         self.assertEqual(get_tag('stage'), 'rpm-0.5rc1')
+
+    def test_verify_tag(self):
+        self.assertTrue(verify_tag('tip'))
+        self.assertTrue(verify_tag('rpm-0.4'))
+        self.assertTrue(verify_tag('rpm-0.5rc1'))
+        self.assertFalse(verify_tag('xxx'))

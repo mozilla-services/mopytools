@@ -51,29 +51,28 @@ PYPI = 'http://pypi.python.org/simple'
 TAG_PREFIX = 'rpm-'
 
 
+def _get_tags(prefix=TAG_PREFIX):
+    sub = subprocess.Popen('hg tags', shell=True, stdout=subprocess.PIPE)
+    return [tag_ for tag_ in
+                [line.split()[0] for line in
+                 sub.stdout.read().strip().split('\n')]
+            if tag_.startswith(TAG_PREFIX)]
+
+
 def verify_tag(tag):
     if tag == 'tip' or tag.isdigit():
         return True
-    sub = subprocess.Popen('hg tags', shell=True, stdout=subprocess.PIPE)
-    tags = [tag_ for tag_ in
-                [line.split()[0] for line in
-                 sub.stdout.read().strip().split('\n')]
-            if tag_.startswith('rpm-')]
-    return tag in tags
+    return tag in _get_tags()
 
 
 def get_tag(channel):
     if channel == 'dev':
         return 'tip'
 
-    sub = subprocess.Popen('hg tags', shell=True, stdout=subprocess.PIPE)
-    tags = [tag for tag in
-                [line.split()[0] for line in
-                 sub.stdout.read().strip().split('\n')]
-            if tag.startswith(TAG_PREFIX)]
+    tags = _get_tags()
 
     if len(tags) == 0:
-        raise ValueError('Could not find a rpm tag')
+        raise ValueError('Could not find any rpm- tag')
 
     # looking for the latest channel tag
     #
@@ -103,7 +102,7 @@ def get_tag(channel):
         if selector(version):
             return tag
 
-    raise ValueError('Could not find a prod tag')
+    raise ValueError('Could not find a tag for channel %s' % channel)
 
 
 def _run(command):
