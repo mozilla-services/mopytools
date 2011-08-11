@@ -46,8 +46,8 @@ entry_points = """\
 services_base=mopytools.apptemplate:AppTemplate
 
 [console_scripts]
-buildapp = mopytools.build:buildapp
-buildrpms = mopytools.build:buildrpms
+buildapp = mopytools.build_app:main
+buildrpms = mopytools.build_rpms:main
 """
 
 
