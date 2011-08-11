@@ -37,11 +37,16 @@ import os
 import sys
 
 from mopytools.util import (run, envname, update_cmd, step,
-                            get_project_name, is_meta_project)
+                            get_project_name, is_meta_project,
+                            has_changes)
 
 
 @step('Updating the repo')
 def updating_repo(name, channel, specific_tags):
+    if has_changes():
+        print('the code was changed locally, aborting!')
+        sys.exit(0)
+
     run(update_cmd(name, channel, specific_tags))
 
 

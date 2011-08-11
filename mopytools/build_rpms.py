@@ -35,11 +35,13 @@
 # ***** END LICENSE BLOCK *****
 import os
 import sys
+import shutil
 
 from mopytools.util import (timeout, get_options, step, get_channel,
-                            split_version)
+                            split_version, get_spec_file, run,
+                            PYTHON, PYPI2RPM, PYPI, has_changes)
 from mopytools.build import get_environ_info, updating_repo
-from pypi2rpm import main as pypi2rpm
+from mopytools.build_app import main as build_app
 
 
 @timeout(4.0)
@@ -51,10 +53,20 @@ def main():
                    "default": None}
     options, args = get_options([(distargs, distoptions)])
 
+    if options.dist_dir is None:
+        options.dist_dir = os.path.join(os.getcwd(), 'rpms')
+
+    if not os.path.exists(options.dist_dir):
+        os.mkdir(options.dist_dir)
+
     if len(args) > 0:
         deps = [dep.strip() for dep in args[0].split(',')]
     else:
         deps = []
+
+    # building the app first (this can be quick, just to refresh the channel in
+    # case it's needed)
+    build_app()
 
     # get the channel
     channel = get_channel(options)
@@ -71,28 +83,76 @@ def _buildrpms(deps, channel, options):
     updating_repo(name, channel, specific_tags)
 
     # building the internal req RPMS
-    build_core_rpm(deps, channel, specific_tags)
+    build_core_rpm(deps, channel, specific_tags, options)
 
     # building the internal req RPMS
-    build_deps_rpms(deps, channel, specific_tags)
+    build_deps_rpms(deps, channel, specific_tags, options)
 
     # building the external deps now
     build_external_deps_rpms(channel, options)
 
 
+def _build_rpm(channel, options):
+    if has_changes():
+        print('the code was changed, aborting!')
+        sys.exit(0)
+
+    # removing any build dir
+    if os.path.exists('build'):
+        shutil.rmtree('build')
+
+    # where's the spec file ?
+    spec_file = get_spec_file()
+
+    if spec_file is None:
+        return
+
+    cmd_options = {'spec': spec_file, 'dist': options.dist_dir}
+
+    # now running the cmd
+    cmd = ("--command-packages=pypi2rpm.command bdist_rpm2 "
+           "--spec-file=%(spec)s --dist-dir=%(dist)s")
+
+    run('%s setup.py %s' % (PYTHON, cmd % cmd_options))
+
+
 @step("Building the project's RPM")
-def build_core_rpm(deps, channel, specific_tags):
-    pass
+def build_core_rpm(deps, channel, specific_tags, options):
+    _build_rpm(channel, options)
 
 
 @step('Building RPMS for internal deps')
-def build_deps_rpms(deps, channel, specific_tags):
-    pass
+def build_deps_rpms(deps, channel, specific_tags, options):
+    # for each dep, we want to get the channel's version
+    location = os.getcwd()
+    try:
+        deps_dir = os.path.abspath(os.path.join(location, 'deps'))
+        if not os.path.exists(deps_dir):
+            print('You need to build your deps first.')
+            sys.exit(0)
+
+        for dep in deps:
+            target = os.path.join(deps_dir, dep)
+            if not os.path.exists(target):
+                print('You need to build your deps first.')
+
+            os.chdir(target)
+            _build_rpm(channel, options)
+    finally:
+        os.chdir(location)
 
 
-@step("Building %(name)s")
-def build_rpm(project, dist_dir, version, index, **kw):
-    pypi2rpm(project, dist_dir, version, index)
+@step("Building %(project)s at version %(version)s")
+def build_rpm(project=None, dist_dir='rpms', version=None, index=PYPI):
+    options = {'dist_dir': dist_dir, 'index': index}
+    if version is None:
+        cmd = "--index=%(index)s --dist-dir=%(dist_dir)s"
+    else:
+        options['version'] = version
+        cmd = ("--index=%(index)s --dist-dir=%(dist_dir)s "
+               "--version=%(version)s")
+
+    run('%s %s %s' % (PYPI2RPM, cmd % options, project))
 
 
 @step('Building RPMS for external deps')
@@ -107,5 +167,5 @@ def build_external_deps_rpms(channel, options):
     with open(req_file) as f:
         for line in f.readlines():
             project, version = split_version(line)
-            build_rpm(project, options.dist_dir, version, options.index,
-                      name=project)
+            build_rpm(project=project, dist_dir=options.dist_dir,
+                      version=version, index=options.index)

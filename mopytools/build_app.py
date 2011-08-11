@@ -34,10 +34,11 @@
 #
 # ***** END LICENSE BLOCK *****
 import os
+import sys
 
 from mopytools.util import (timeout, get_options, step, get_channel,
                             update_cmd, is_meta_project, PYTHON, run, PIP,
-                            REPO_ROOT)
+                            REPO_ROOT, has_changes)
 from mopytools.build import get_environ_info, updating_repo
 
 
@@ -108,6 +109,10 @@ def build_deps(deps, channel, specific_tags):
             else:
                 run('hg clone %s %s' % (repo, target))
                 os.chdir(target)
+
+            if has_changes():
+                print('the code was changed, aborting!')
+                sys.exit(0)
 
             cmd = update_cmd(dep, channel, specific_tags)
             run(cmd)

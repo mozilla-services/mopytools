@@ -48,6 +48,7 @@ PYTHON = sys.executable
 PIP = os.path.join(os.path.dirname(PYTHON), 'pip')
 PYPI = 'http://pypi.python.org/simple'
 TAG_PREFIX = 'rpm-'
+PYPI2RPM = os.path.join(os.path.dirname(PYTHON), 'pypi2rpm.py')
 
 
 def _get_tags(prefix=TAG_PREFIX):
@@ -109,20 +110,38 @@ def run(command):
     sb = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE)
     stream_over = 0
+    output = []
     while stream_over < 2:
         sys.stdout.write('.')
         sys.stdout.flush()
-
         out = sb.stdout.readline()
         if out.strip() == '':
             stream_over += 1
+        else:
+            output.append(out.strip())
+
         err = sb.stderr.readline()
         if err.strip() == '':
             stream_over += 1
+        else:
+            output.append(err.strip())
+
+    code = sb.wait()
+    if code != 0:
+        print("%r failed with code %d" % (command, code))
+        print('\n'.join(output))
+        sys.exit(code)
+
+    return code, '\n'.join(output)
 
 
 def envname(name):
     return name.upper().replace('-', '_')
+
+
+def has_changes():
+    code, output = run('hg di')
+    return output != ''
 
 
 def update_cmd(project=None, channel="prod", specific_tag=False):
@@ -177,10 +196,14 @@ _URL = re.compile('^Url: (.*?)$', re.M | re.DOTALL)
 
 
 def is_meta_project():
+    return get_spec_file() is None
+
+
+def get_spec_file():
     for file_ in os.listdir(os.getcwd()):
         if os.path.splitext(file_)[-1] == '.spec':
-            return False
-    return True
+            return os.path.join(os.getcwd(), file_)
+    return None
 
 
 def split_version(line):
@@ -198,18 +221,14 @@ def split_version(line):
 def get_project_name():
     if is_meta_project():
         return None
-    spec_file = None
-    for file_ in os.listdir(os.getcwd()):
-        if os.path.splitext(file_)[-1] == '.spec':
-            spec_file = file_
-            break
+    spec_file = get_spec_file()
     if spec_file is not None:
         with open(spec_file) as f:
             data = f.read()
             name = _URL.findall(data)
             if len(name) == 1:
                 return name[0].split('/')[-1]
-    return spec_file
+    return None
 
 
 def setup_pypi(pypi, extras=None, strict=False):
