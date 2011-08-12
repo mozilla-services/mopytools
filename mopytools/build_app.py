@@ -59,16 +59,16 @@ def main():
     channel = get_channel(options)
     print("The current channel is %s." % channel)
 
-    _buildapp(channel, deps)
+    _buildapp(channel, deps, options.force)
 
 
 @step('Building the app')
-def _buildapp(channel, deps):
+def _buildapp(channel, deps, force):
     # check the environ
     name, specific_tags = get_environ_info(deps)
 
     # updating the repo
-    updating_repo(name, channel, specific_tags)
+    updating_repo(name, channel, specific_tags, force)
 
     # building internal deps first
     build_deps(deps, channel, specific_tags)

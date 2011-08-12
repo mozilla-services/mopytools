@@ -144,9 +144,15 @@ def has_changes():
     return output != ''
 
 
-def update_cmd(project=None, channel="prod", specific_tag=False):
+def update_cmd(project=None, channel="prod", specific_tag=False,
+               force=False):
+    if force:
+        cmd = 'hg up -C'
+    else:
+        cmd = 'hg up -c'
+
     if not specific_tag:
-        return 'hg up -r "%s"' % get_channel_tag(channel)
+        return '%s -r "%s"' % (cmd, get_channel_tag(channel))
 
     # looking for an environ with a specific tag or rev
     if project is not None:
@@ -156,8 +162,9 @@ def update_cmd(project=None, channel="prod", specific_tag=False):
                 print('Unknown tag or revision: %s' % rev)
                 sys.exit(1)
 
-            return 'hg up -r "%s"' % rev
-    return 'hg up'
+            return '%s -r "%s"' % (cmd, rev)
+
+    return cmd
 
 
 _LEVEL = -1
@@ -292,6 +299,10 @@ def get_options(extra_options=None):
                       help="Channel to build",
                       default="last", type="choice",
                       choices=["prod", "dev", "stage", "last"])
+
+    parser.add_option("-f", "--force", dest="force",
+                      action="store_true", default=False,
+                      help="Forces update")
 
     for optargs, optkw in extra_options:
         parser.add_option(*optargs, **optkw)

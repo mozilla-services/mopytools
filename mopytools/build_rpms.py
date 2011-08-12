@@ -80,7 +80,7 @@ def _buildrpms(deps, channel, options):
     name, specific_tags = get_environ_info(deps)
 
     # updating the repo
-    updating_repo(name, channel, specific_tags)
+    updating_repo(name, channel, specific_tags, options.force)
 
     # building the internal req RPMS
     build_core_rpm(deps, channel, specific_tags, options)
