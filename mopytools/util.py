@@ -284,7 +284,10 @@ def timeout(duration):
 def get_options(extra_options=None):
     if extra_options is None:
         extra_options = []
-    parser = OptionParser()
+
+    usage = ("usage: %prog [options] "
+             "[Mozilla Services deps separated by commas]")
+    parser = OptionParser(usage=usage)
     parser.add_option("-i", "--index", dest="index",
                       help="Pypi index", default=PYPI)
 
