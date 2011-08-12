@@ -103,7 +103,9 @@ def get_channel_tag(channel):
         if selector(version):
             return tag
 
-    raise ValueError('Could not find a tag for channel %s' % channel)
+    print('Could not find a tag for channel %s' % channel)
+    print('Make sure you have a %s-reqs.txt file' % channel)
+    sys.exit(0)
 
 
 def run(command):
