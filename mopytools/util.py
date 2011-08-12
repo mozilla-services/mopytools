@@ -42,6 +42,7 @@ from urlparse import urlparse
 from ConfigParser import ConfigParser
 from distutils2.version import NormalizedVersion, IrrationalVersionError
 from optparse import OptionParser
+import signal
 
 REPO_ROOT = 'https://hg.mozilla.org/services/'
 PYTHON = sys.executable
@@ -108,33 +109,62 @@ def get_channel_tag(channel):
     sys.exit(0)
 
 
+class TimeoutError(Exception):
+    pass
+
+
+def timeout_handler(signum, frame):
+    raise TimeoutError("The call has taken too long")
+
+
+def with_timer(duration, cleanup=None):
+    def _timer(func):
+        def __timer(*args, **kw):
+            previous_sig = signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(duration)
+            try:
+                return func(*args, **kw)
+            except TimeoutError:
+                if cleanup is not None:
+                    cleanup()
+                raise
+            finally:
+                # replace the previous sig
+                signal.signal(signal.SIGALRM, previous_sig)
+        return __timer
+    return _timer
+
+
 def run(command):
-    sb = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE)
-    stream_over = 0
-    output = []
-    while stream_over < 2:
-        sys.stdout.write('.')
-        sys.stdout.flush()
-        out = sb.stdout.readline()
-        if out.strip() == '':
-            stream_over += 1
-        else:
-            output.append(out.strip())
+    err_output = []
+    out_output = []
 
-        err = sb.stderr.readline()
-        if err.strip() == '':
-            stream_over += 1
-        else:
-            output.append(err.strip())
+    def _output():
+        out = 'Output:\n:%s' % '\n'.join(out_output)
+        err = '\n\nErrors:\n:%s' % '\n'.join(err_output)
+        return out + err
 
-    code = sb.wait()
-    if code != 0:
-        print("%r failed with code %d" % (command, code))
-        print('\n'.join(output))
-        sys.exit(code)
+    @with_timer(120)
+    def _run():
+        sb = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
 
-    return code, '\n'.join(output)
+        stdout, stderr = sb.communicate()
+        code = sb.returncode
+
+        if code != 0:
+            print("%r failed with code %d" % (command, code))
+            print(stdout)
+            print(stderr)
+            sys.exit(code)
+
+        return code, stdout, stderr
+
+    try:
+        return  _run()
+    except TimeoutError:
+        print("Timed out!")
+        sys.exit(0)
 
 
 def envname(name):
@@ -142,8 +172,8 @@ def envname(name):
 
 
 def has_changes():
-    code, output = run('hg di')
-    return output != ''
+    code, out, err = run('hg di')
+    return out != ''
 
 
 def update_cmd(project=None, channel="prod", specific_tag=False,
