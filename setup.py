@@ -37,6 +37,7 @@ from setuptools import setup, find_packages
 
 
 install_requires = ['Paste', 'PasteScript', 'PasteDeploy', 'flake8',
+                    'distutils2',
                     'virtualenv', 'pypi2rpm']
 
 
@@ -45,8 +46,8 @@ entry_points = """\
 services_base=mopytools.apptemplate:AppTemplate
 
 [console_scripts]
-buildapp = mopytools.build:main
-buildrpms = mopytools.build:buildrpms
+buildapp = mopytools.build_app:main
+buildrpms = mopytools.build_rpms:main
 """
 
 
