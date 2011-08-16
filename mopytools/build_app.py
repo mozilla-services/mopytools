@@ -89,6 +89,7 @@ def _buildapp(channel, deps, force):
 def build_core_app():
     run('%s setup.py develop' % PYTHON)
 
+
 @step("Getting %(dep)s")
 def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False):
     repo = REPO_ROOT + dep
