@@ -101,6 +101,8 @@ def get_channel_tag(channel):
 
     for tag in tags:
         version = tag[len(TAG_PREFIX):]
+        if '-' in version:
+            version = version.replace('-', '.')
         if selector(version):
             return tag
 
