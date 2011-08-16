@@ -41,8 +41,9 @@ import StringIO
 import ConfigParser
 import sys
 
-from mopytools.build import get_channel_tag, tag_exists, _get_options
-from mopytools import build
+from mopytools.util import get_channel_tag, tag_exists, get_options
+from mopytools import util
+
 
 _CMDS = {"hg tags": """\
 tip                               34:7d3a88af29ec
@@ -82,12 +83,12 @@ class TestBuild(unittest.TestCase):
     def setUp(self):
         self.old_po = subprocess.Popen
         subprocess.Popen = FakePopen
-        self.old_cp = ConfigParser
-        build.ConfigParser = ParserNoWrite
+        self.old_cp = util.ConfigParser
+        util.ConfigParser = ParserNoWrite
 
     def tearDown(self):
         subprocess.Popen = self.old_po
-        build.ConfigParser = self.old_cp
+        util.ConfigParser = self.old_cp
 
     def test_get_tag(self):
         self.assertEqual(get_channel_tag('dev'), 'tip')
@@ -104,7 +105,7 @@ class TestBuild(unittest.TestCase):
         old_argv = sys.argv[:]
         sys.argv[:] = ['whatever', 'is_done']
         try:
-            options, args = _get_options()
+            options, args = get_options()
         finally:
             sys.argv[:] = old_argv
 
