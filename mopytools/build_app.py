@@ -89,6 +89,28 @@ def _buildapp(channel, deps, force):
 def build_core_app():
     run('%s setup.py develop' % PYTHON)
 
+@step("Getting %(dep)s")
+def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False):
+    repo = REPO_ROOT + dep
+    target = os.path.join(deps_dir, dep)
+    if os.path.exists(target):
+        os.chdir(target)
+        run('hg pull')
+    else:
+        run('hg clone %s %s' % (repo, target))
+        os.chdir(target)
+
+    if has_changes():
+        if channel != 'dev':
+            print('the code was changed, aborting!')
+            sys.exit(0)
+        else:
+            print('Warning: the code was changed/')
+
+    cmd = update_cmd(dep, channel, specific_tags)
+    run(cmd)
+    run('%s setup.py develop' % PYTHON)
+
 
 @step('Building Services dependencies')
 def build_deps(deps, channel, specific_tags):
@@ -101,22 +123,8 @@ def build_deps(deps, channel, specific_tags):
             os.mkdir(deps_dir)
 
         for dep in deps:
-            repo = REPO_ROOT + dep
-            target = os.path.join(deps_dir, dep)
-            if os.path.exists(target):
-                os.chdir(target)
-                run('hg pull')
-            else:
-                run('hg clone %s %s' % (repo, target))
-                os.chdir(target)
-
-            if has_changes():
-                print('the code was changed, aborting!')
-                sys.exit(0)
-
-            cmd = update_cmd(dep, channel, specific_tags)
-            run(cmd)
-            run('%s setup.py develop' % PYTHON)
+            build_dep(dep=dep, deps_dir=deps_dir, channel=channel,
+                      specific_tags=specific_tags)
     finally:
         os.chdir(location)
 

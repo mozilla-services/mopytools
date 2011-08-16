@@ -180,10 +180,12 @@ def has_changes():
 
 def update_cmd(project=None, channel="prod", specific_tag=False,
                force=False):
-    if force:
+    if force and channel != 'dev':
         cmd = 'hg up -C'
-    else:
+    elif channel != 'dev':
         cmd = 'hg up -c'
+    else:
+        cmd = 'hg up'
 
     if not specific_tag:
         return '%s -r "%s"' % (cmd, get_channel_tag(channel))
