@@ -93,7 +93,7 @@ def _buildrpms(deps, channel, options):
 
 
 def _build_rpm(channel, options):
-    if has_changes():
+    if has_changes() and channel != 'dev':
         print('the code was changed, aborting!')
         sys.exit(0)
 

@@ -40,9 +40,12 @@ import subprocess
 import socket
 from urlparse import urlparse
 from ConfigParser import ConfigParser
-from distutils2.version import NormalizedVersion, IrrationalVersionError
 from optparse import OptionParser
 import signal
+
+from distutils2.version import NormalizedVersion, IrrationalVersionError
+from distutils2.index.simple import Crawler, DEFAULT_SIMPLE_INDEX_URL
+
 
 REPO_ROOT = 'https://hg.mozilla.org/services/'
 PYTHON = sys.executable
@@ -249,14 +252,73 @@ def get_spec_file():
     return None
 
 
+_V = NormalizedVersion
+
+
+def _match(version, token, other):
+    token = token.strip()
+    try:
+        if token == '==':
+            return version == other
+        elif token == '>=':
+            return _V(version) >= _V(other)
+        elif token == '>':
+            return _V(version) > _V(other)
+        elif token == '<=':
+            return _V(version) <= _V(other)
+        elif token == '<':
+            return _V(version) < _V(other)
+        elif token == '!=':
+            return _V(version) != _V(other)
+    except IrrationalVersionError:
+        return False
+    raise NotImplementedError(token)
+
+
+def _vsort(version1, version2):
+    if _V(version1) > _V(version2):
+        return -1
+    elif _V(version1) < _V(version2):
+        return 1
+    return 0
+
+
+def _best_release(project_name, version=None, token='==',
+                  index_url=DEFAULT_SIMPLE_INDEX_URL):
+    c = Crawler(index_url=index_url, prefer_final=True)
+    project = c.get_releases(project_name)
+    versions = project.get_versions()
+
+    if version is None:
+        versions.sort(_vsort)
+        return versions[0]
+    else:
+        selected = []
+        for existing_ver in project.get_versions():
+            if _match(existing_ver, token, version):
+                selected.append(existing_ver)
+
+        if len(selected) == 0:
+            print 'Unknown version'
+            return None
+
+        selected.sort(_vsort)
+        return selected[0]
+
+
 def split_version(line):
     tokens = ['==', '>=', '<=', '>', '<', '!=']
     for token in tokens:
         if token in line:
             if token != '==':
-                raise NotImplementedError(line)
+                # we need to grab a list of versions from
+                # PyPI and decide which one works
+                app, version = line.split(token, 1)
+                app, version = app.strip(), version.strip()
+                version = _best_release(app, version, token.strip())
+            else:
+                app, version = line.split(token, 1)
 
-            app, version = line.split(token, 1)
             return app.strip(), version.strip()
     return line.strip(), None
 
