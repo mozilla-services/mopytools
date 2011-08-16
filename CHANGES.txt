@@ -1,3 +1,8 @@
+0.5 - 2011-08-16
+================
+
+- make sure the rpm trailing version is taken into account
+
 
 0.5 - 2011-08-16
 ================
