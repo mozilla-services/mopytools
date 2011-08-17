@@ -121,6 +121,14 @@ def build_core_rpm(deps, channel, specific_tags, options):
     _build_rpm(channel, options)
 
 
+@step("Building %(dep)s")
+def build_dep_rpm(dep='', deps_dir='deps', channel='prod', options=None):
+    target = os.path.join(deps_dir, dep)
+    if not os.path.exists(target):
+        print('You need to build your deps first.')
+    os.chdir(target)
+    _build_rpm(channel, options)
+
 @step('Building RPMS for internal deps')
 def build_deps_rpms(deps, channel, specific_tags, options):
     # for each dep, we want to get the channel's version
@@ -132,12 +140,8 @@ def build_deps_rpms(deps, channel, specific_tags, options):
             sys.exit(0)
 
         for dep in deps:
-            target = os.path.join(deps_dir, dep)
-            if not os.path.exists(target):
-                print('You need to build your deps first.')
-
-            os.chdir(target)
-            _build_rpm(channel, options)
+            build_dep_rpm(dep=dep, deps_dir=deps_dir, channel=channel,
+                          options=options)
     finally:
         os.chdir(location)
 

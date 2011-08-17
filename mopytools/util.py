@@ -326,6 +326,7 @@ def split_version(line):
 def get_project_name():
     if is_meta_project():
         return None
+
     spec_file = get_spec_file()
     if spec_file is not None:
         with open(spec_file) as f:
@@ -333,6 +334,15 @@ def get_project_name():
             name = _URL.findall(data)
             if len(name) == 1:
                 return name[0].split('/')[-1]
+
+    hgrc = os.path.join('.hg', 'hgrc')
+    if os.path.exists(hgrc):
+        reader = ConfigParser()
+        reader.read(hgrc)
+        if reader.has_option('paths', 'default'):
+            repo_url = reader.get('paths', 'default')
+            return repo_url.split('/')[-1]
+
     return None
 
 
