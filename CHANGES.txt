@@ -1,4 +1,10 @@
-0.5 - 2011-08-16
+0.8 - 2011-08-19
+================
+
+- provide hgrc as a fallback
+
+
+0.6 - 2011-08-16
 ================
 
 - make sure the rpm trailing version is taken into account
