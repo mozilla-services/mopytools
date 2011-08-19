@@ -343,7 +343,7 @@ def get_project_name():
             repo_url = reader.get('paths', 'default')
             return repo_url.split('/')[-1]
 
-    return None
+    raise IOError('Unable to find the project name.')
 
 
 def setup_pypi(pypi, extras=None, strict=False):
