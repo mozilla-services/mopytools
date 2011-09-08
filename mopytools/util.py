@@ -420,6 +420,11 @@ def get_options(extra_options=None):
 
     options, args = parser.parse_args()
 
+    if len(args) > 1:
+        print('Wrong number of arguments.')
+        parser.print_usage()
+        sys.exit(0)
+
     # set pypi location
     setup_pypi(options.index, options.extras, options.strict)
 

@@ -111,3 +111,14 @@ class TestBuild(unittest.TestCase):
 
         result = ParserNoWrite.writes[-1][1]
         self.assertEquals(result, _CFG)
+
+    def test_stabby(self):
+        old_argv = sys.argv[:]
+        sys.argv[:] = ['', 'one, ', 'two']
+        old_stdout = sys.stdout
+        sys.stdout = StringIO.StringIO()
+        try:
+            self.assertRaises(SystemExit, get_options)
+        finally:
+            sys.argv[:] = old_argv
+            sys.stdout = old_stdout
