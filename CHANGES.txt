@@ -1,3 +1,10 @@
+1.0 - 2011-09-09
+================
+
+- make sure we raise an error on bad number of arguments
+- added a -r option to remove the destination dir for rpms
+
+
 0.8 - 2011-08-19
 ================
 
