@@ -47,16 +47,28 @@ from mopytools.build_app import main as build_app
 @timeout(4.0)
 def main():
     """Build RPMs using PyPI2RPM and a pip-style req list"""
-    distargs = ("-d", "--dist-dir")
-    distoptions = {"dest": "dist_dir",
-                   "help": "Distributions directory",
-                   "default": None}
-    options, args = get_options([(distargs, distoptions)])
+    extra_options = [[("-d", "--dist-dir"),
+                      {"dest": "dist_dir",
+                       "help": "Distributions directory",
+                       "default": None}],
+                     [("-r", "--remove-dir"),
+                      {"dest": "remove_dir",
+                       "action": "store_true",
+                       "default": False,
+                       "help": "Delete the target directory if it exists."}]]
+
+    options, args = get_options(extra_options)
 
     if options.dist_dir is None:
         options.dist_dir = os.path.join(os.getcwd(), 'rpms')
 
-    if not os.path.exists(options.dist_dir):
+    if os.path.exists(options.dist_dir):
+        if options.remove_dir:
+            # we want to clean up the dir before we start
+            print('Removing existing directory.')
+            shutil.rmtree(options.dist_dir)
+            os.mkdir(options.dist_dir)
+    else:
         os.mkdir(options.dist_dir)
 
     if len(args) > 0:
@@ -128,6 +140,7 @@ def build_dep_rpm(dep='', deps_dir='deps', channel='prod', options=None):
         print('You need to build your deps first.')
     os.chdir(target)
     _build_rpm(channel, options)
+
 
 @step('Building RPMS for internal deps')
 def build_deps_rpms(deps, channel, specific_tags, options):

@@ -40,6 +40,8 @@ import subprocess
 import StringIO
 import ConfigParser
 import sys
+import tempfile
+import os
 
 from mopytools.util import get_channel_tag, tag_exists, get_options
 from mopytools import util
@@ -111,6 +113,37 @@ class TestBuild(unittest.TestCase):
 
         result = ParserNoWrite.writes[-1][1]
         self.assertEquals(result, _CFG)
+
+    def test_rmdir(self):
+        from mopytools import build_rpms
+
+        old_build_app = build_rpms.build_app
+        build_rpms.build_app = lambda: None
+        old_buildrpms = build_rpms._buildrpms
+        build_rpms._buildrpms = lambda deps, channel, options: None
+        old_argv = sys.argv[:]
+
+        tempdir = tempfile.mkdtemp()
+        with open(os.path.join(tempdir, 'xx'), 'w') as f:
+            f.write('#')
+
+        sys.argv[:] = ['', '-r', '--dist-dir', tempdir]
+        old_stdout = sys.stdout
+        sys.stdout = StringIO.StringIO()
+        try:
+            build_rpms.main()
+        finally:
+            sys.argv[:] = old_argv
+            build_rpms.build_app = old_build_app
+            build_rpms._buildrpms = old_buildrpms
+            sys.stdout = old_stdout
+
+        try:
+            # let's check that the dir was removed and recreated empty
+            self.assertTrue(os.path.exists(tempdir))
+            self.assertEquals(len(os.listdir(tempdir)), 0)
+        finally:
+            os.rmdir(tempdir)
 
     def test_stabby(self):
         old_argv = sys.argv[:]
