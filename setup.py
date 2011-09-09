@@ -51,7 +51,7 @@ buildrpms = mopytools.build_rpms:main
 """
 
 
-setup(name='MoPyTools', version='1.0',
+setup(name='MoPyTools', version='1.1',
       author="Tarek Ziade", author_email="tarek@mozilla.com",
       url="http://hg.mozilla.org/services/server-devtools",
       description="Set of tools to build Mozilla Services apps",
