@@ -93,7 +93,7 @@ class TestBuild(unittest.TestCase):
         util.ConfigParser = self.old_cp
 
     def test_get_tag(self):
-        self.assertEqual(get_channel_tag('dev'), 'tip')
+        self.assertEqual(get_channel_tag('dev'), 'default')
         self.assertEqual(get_channel_tag('prod'), 'rpm-0.4')
         self.assertEqual(get_channel_tag('stage'), 'rpm-0.5rc1')
 

@@ -64,14 +64,14 @@ def _get_tags(prefix=TAG_PREFIX):
 
 
 def tag_exists(tag):
-    if tag == 'tip' or tag.isdigit():
+    if tag in ('tip', 'defaut') or tag.isdigit():
         return True
     return tag in _get_tags()
 
 
 def get_channel_tag(channel):
     if channel == 'dev':
-        return 'tip'
+        return 'default'
 
     tags = _get_tags()
 
