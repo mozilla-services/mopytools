@@ -38,7 +38,7 @@ import sys
 
 from mopytools.util import (timeout, get_options, step, get_channel,
                             update_cmd, is_meta_project, PYTHON, run, PIP,
-                            REPO_ROOT, has_changes)
+                            REPO_ROOT, has_changes, is_git)
 from mopytools.build import get_environ_info, updating_repo
 
 
@@ -90,15 +90,28 @@ def build_core_app():
     run('%s setup.py develop' % PYTHON)
 
 
+def _is_git_repo(url):
+    # lame but enough for now
+    return url.startswith('git://') or 'github.com' in url
+
+
 @step("Getting %(dep)s")
 def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False):
     repo = REPO_ROOT + dep
     target = os.path.join(deps_dir, dep)
     if os.path.exists(target):
         os.chdir(target)
-        run('hg pull')
+        if is_git():
+            run('git fetch')
+        else:
+            run('hg pull')
     else:
-        run('hg clone %s %s' % (repo, target))
+        # let's try to detect the repo kind with a few heuristics
+        if _is_git_repo(repo):
+            run('git clone %s %s' % (repo, target))
+        else:
+            run('hg clone %s %s' % (repo, target))
+
         os.chdir(target)
 
     if has_changes():

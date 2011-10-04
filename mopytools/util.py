@@ -55,8 +55,18 @@ TAG_PREFIX = 'rpm-'
 PYPI2RPM = os.path.join(os.path.dirname(PYTHON), 'pypi2rpm.py')
 
 
+def is_git():
+    """Returns True if the current dir contains a .git"""
+    return '.git' in os.listdir('.')
+
+
 def _get_tags(prefix=TAG_PREFIX):
-    sub = subprocess.Popen('hg tags', shell=True, stdout=subprocess.PIPE)
+    if is_git():
+        cmd = 'git tag'
+    else:
+        cmd = 'hg tags'
+
+    sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     return [tag_ for tag_ in
                 [line.split()[0] for line in
                  sub.stdout.read().strip().split('\n')]
@@ -177,18 +187,32 @@ def envname(name):
 
 
 def has_changes():
-    code, out, err = run('hg di')
-    return out != ''
+    if is_git():
+        code, out, err = run('git diff --exit-code')
+        return code == 1
+    else:
+        code, out, err = run('hg di')
+        return out != ''
 
 
 def update_cmd(project=None, channel="prod", specific_tag=False,
                force=False):
     if force and channel != 'dev':
-        cmd = 'hg up -C'
+        if is_git():
+            cmd = 'git checkout --force'
+        else:
+            cmd = 'hg up -C'
+
     elif channel != 'dev':
-        cmd = 'hg up -c'
+        if is_git():
+            cmd = 'git checkout'
+        else:
+            cmd = 'hg up -c'
     else:
-        cmd = 'hg up'
+        if is_git():
+            cmd = 'git checkout'
+        else:
+            cmd = 'hg up'
 
     if not specific_tag:
         return '%s -r "%s"' % (cmd, get_channel_tag(channel))
