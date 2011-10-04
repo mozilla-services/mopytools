@@ -50,11 +50,17 @@ buildapp = mopytools.build_app:main
 buildrpms = mopytools.build_rpms:main
 """
 
+package_data = {
+  "mopytools.apptemplate": ["services_base/*.*",
+                            "services_base/+package+/*.*",
+                            "services_base/+package+/tests/*.*"]}
+
 
 setup(name='MoPyTools', version='1.2',
       author="Tarek Ziade", author_email="tarek@mozilla.com",
       url="http://hg.mozilla.org/services/server-devtools",
       description="Set of tools to build Mozilla Services apps",
       packages=find_packages(),
+      package_data=package_data,
       install_requires=install_requires,
       entry_points=entry_points)
