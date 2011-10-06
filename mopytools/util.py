@@ -67,10 +67,18 @@ def _get_tags(prefix=TAG_PREFIX):
         cmd = 'hg tags'
 
     sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    return [tag_ for tag_ in
+    output = sub.stdout.read().strip()
+    if output == '':
+        return []
+
+    tags = [tag_ for tag_ in
                 [line.split()[0] for line in
                  sub.stdout.read().strip().split('\n')]
             if tag_.startswith(TAG_PREFIX)]
+    if is_git():
+        tags.reverse()
+
+    return tags
 
 
 def tag_exists(tag):
@@ -215,7 +223,10 @@ def update_cmd(project=None, channel="prod", specific_tag=False,
             cmd = 'hg up'
 
     if not specific_tag:
-        return '%s -r "%s"' % (cmd, get_channel_tag(channel))
+        if is_git():
+            return '%s "%s"' % (cmd, get_channel_tag(channel))
+        else:
+            return '%s -r "%s"' % (cmd, get_channel_tag(channel))
 
     # looking for an environ with a specific tag or rev
     if project is not None:
