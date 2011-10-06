@@ -73,7 +73,7 @@ def _get_tags(prefix=TAG_PREFIX):
 
     tags = [tag_ for tag_ in
                 [line.split()[0] for line in
-                 sub.stdout.read().strip().split('\n')]
+                 output.split('\n')]
             if tag_.startswith(TAG_PREFIX)]
     if is_git():
         tags.reverse()
