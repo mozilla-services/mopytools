@@ -89,6 +89,8 @@ def tag_exists(tag):
 
 def get_channel_tag(channel):
     if channel == 'dev':
+        if is_git():
+            return 'master'
         return 'default'
 
     tags = _get_tags()
