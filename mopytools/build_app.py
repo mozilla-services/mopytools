@@ -147,7 +147,6 @@ def build_deps(deps, channel, specific_tags):
 def build_external_deps(channel):
     # looking for a req file
     reqname = '%s-reqs.txt' % channel
-    filename = os.path.join(os.path.dirname(__file__), reqname)
-    if not os.path.exists(filename):
-        return
-    run('%s -r %s' % (PIP, filename))
+    if not os.path.exists(reqname):
+        raise IOError("File not found %s" % reqname)
+    run('%s install -r %s' % (PIP, reqname))
