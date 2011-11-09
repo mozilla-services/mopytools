@@ -160,7 +160,7 @@ def with_timer(duration, cleanup=None):
     return _timer
 
 
-def run(command):
+def run(command, timeout=120, verbose=False):
     err_output = []
     out_output = []
 
@@ -169,8 +169,11 @@ def run(command):
         err = '\n\nErrors:\n:%s' % '\n'.join(err_output)
         return out + err
 
-    @with_timer(120)
+    @with_timer(timeout)
     def _run():
+        if verbose:
+            print('\n' + command)
+
         sb = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE)
 
@@ -182,12 +185,16 @@ def run(command):
             print(stdout)
             print(stderr)
             sys.exit(code)
+        elif verbose:
+            print(stdout)
+            print(stderr)
 
         return code, stdout, stderr
 
     try:
         return  _run()
     except TimeoutError:
+        print(command)
         print("Timed out!")
         sys.exit(0)
 
@@ -196,12 +203,12 @@ def envname(name):
     return name.upper().replace('-', '_')
 
 
-def has_changes():
+def has_changes(timeout=5, verbose=False):
     if is_git():
-        code, out, err = run('git diff --exit-code')
+        code, out, err = run('git diff --exit-code', timeout, verbose)
         return code == 1
     else:
-        code, out, err = run('hg di')
+        code, out, err = run('hg di', timeout, verbose)
         return out != ''
 
 
@@ -451,6 +458,14 @@ def get_options(extra_options=None):
     parser.add_option("-f", "--force", dest="force",
                       action="store_true", default=False,
                       help="Forces update")
+
+    parser.add_option("-v", "--verbose", dest="verbose",
+                      action="store_true", default=False,
+                      help="Verbose mode")
+
+    parser.add_option("-t", "--timeout", dest="timeout",
+                      help="Time out",
+                      default=120, type="int")
 
     for optargs, optkw in extra_options:
         parser.add_option(*optargs, **optkw)

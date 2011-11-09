@@ -59,22 +59,22 @@ def main():
     channel = get_channel(options)
     print("The current channel is %s." % channel)
 
-    _buildapp(channel, deps, options.force)
+    _buildapp(channel, deps, options.force, options.timeout, options.verbose)
 
 
 @step('Building the app')
-def _buildapp(channel, deps, force):
+def _buildapp(channel, deps, force, timeout, verbose):
     # check the environ
     name, specific_tags = get_environ_info(deps)
 
     # updating the repo
-    updating_repo(name, channel, specific_tags, force)
+    updating_repo(name, channel, specific_tags, force, timeout, verbose)
 
     # building internal deps first
-    build_deps(deps, channel, specific_tags)
+    build_deps(deps, channel, specific_tags, timeout, verbose)
 
     # building the external deps now
-    build_external_deps(channel)
+    build_external_deps(channel, timeout, verbose)
 
     # if the current repo is a meta-repo, running tip on it
     if is_meta_project():
@@ -82,12 +82,12 @@ def _buildapp(channel, deps, force):
         channel = "dev"
 
     # build the app now
-    build_core_app()
+    build_core_app(timeout, verbose)
 
 
 @step('Now building the app itself')
-def build_core_app():
-    run('%s setup.py develop' % PYTHON)
+def build_core_app(timeout=120, verbose=False):
+    run('%s setup.py develop' % PYTHON, timeout, verbose)
 
 
 def _is_git_repo(url):
@@ -96,7 +96,8 @@ def _is_git_repo(url):
 
 
 @step("Getting %(dep)s")
-def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False):
+def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False,
+              timeout=120, verbose=False):
     repo = REPO_ROOT + dep
     target = os.path.join(deps_dir, dep)
     if os.path.exists(target):
@@ -114,7 +115,7 @@ def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False):
 
         os.chdir(target)
 
-    if has_changes():
+    if has_changes(timeout, verbose):
         if channel != 'dev':
             print('the code was changed, aborting!')
             sys.exit(0)
@@ -122,12 +123,12 @@ def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False):
             print('Warning: the code was changed/')
 
     cmd = update_cmd(dep, channel, specific_tags)
-    run(cmd)
-    run('%s setup.py develop' % PYTHON)
+    run(cmd, timeout, verbose)
+    run('%s setup.py develop' % PYTHON, timeout, verbose)
 
 
 @step('Building Services dependencies')
-def build_deps(deps, channel, specific_tags):
+def build_deps(deps, channel, specific_tags, timeout=120, verbose=False):
     """Will make sure dependencies are up-to-date"""
     location = os.getcwd()
     # do we want the latest tags ?
@@ -138,15 +139,16 @@ def build_deps(deps, channel, specific_tags):
 
         for dep in deps:
             build_dep(dep=dep, deps_dir=deps_dir, channel=channel,
-                      specific_tags=specific_tags)
+                      specific_tags=specific_tags, timeout=timeout,
+                      verbose=verbose)
     finally:
         os.chdir(location)
 
 
 @step('Building External dependencies')
-def build_external_deps(channel):
+def build_external_deps(channel, timeout=120, verbose=False):
     # looking for a req file
     reqname = '%s-reqs.txt' % channel
     if not os.path.exists(reqname):
         raise IOError("File not found %s" % reqname)
-    run('%s install -r %s' % (PIP, reqname))
+    run('%s install -r %s' % (PIP, reqname), timeout, verbose)

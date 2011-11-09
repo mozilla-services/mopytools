@@ -42,14 +42,15 @@ from mopytools.util import (run, envname, update_cmd, step,
 
 
 @step('Updating the repo')
-def updating_repo(name, channel, specific_tags, force=False):
-    if not force and has_changes() and channel != 'dev':
+def updating_repo(name, channel, specific_tags, force=False, timeout=60,
+                  verbose=False):
+    if not force and has_changes(timeout, verbose) and channel != 'dev':
         print('The code was changed locally, aborting!')
         print('You can use --force but all uncommited '
               'changes will be discarded.')
         sys.exit(0)
 
-    run(update_cmd(name, channel, specific_tags, force))
+    run(update_cmd(name, channel, specific_tags, force), timeout, verbose)
 
 
 @step('Checking provided tags')
