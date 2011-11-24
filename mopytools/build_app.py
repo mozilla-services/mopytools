@@ -151,4 +151,11 @@ def build_external_deps(channel, timeout=120, verbose=False):
     reqname = '%s-reqs.txt' % channel
     if not os.path.exists(reqname):
         raise IOError("File not found %s" % reqname)
-    run('%s install -r %s' % (PIP, reqname), timeout, verbose)
+    if os.path.exists('build'):
+        root = 'build'
+        inc = 1
+        while os.path.exists(root + str(inc)):
+            inc += 1
+        os.rename('build', root + str(inc))
+
+    run('%s install -U -r %s' % (PIP, reqname), timeout, verbose)
