@@ -1,7 +1,7 @@
-1.8 - ?
-=======
+1.8 - 2011-11-24
+================
 
-- ?
+- Make sure the req building occurs in a clean env,
 
 
 1.7 - 2011-11-14
