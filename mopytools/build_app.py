@@ -59,11 +59,15 @@ def main():
     channel = get_channel(options)
     print("The current channel is %s." % channel)
 
-    _buildapp(channel, deps, options.force, options.timeout, options.verbose)
+    _buildapp(channel, deps, options.force, options.timeout, options.verbose,
+              options.index, options.extras)
 
 
 @step('Building the app')
-def _buildapp(channel, deps, force, timeout, verbose):
+def _buildapp(channel, deps, force, timeout, verbose, index, extras):
+    if extras is None:
+        extras = ''
+
     # check the environ
     name, specific_tags = get_environ_info(deps)
 
@@ -74,7 +78,7 @@ def _buildapp(channel, deps, force, timeout, verbose):
     build_deps(deps, channel, specific_tags, timeout, verbose)
 
     # building the external deps now
-    build_external_deps(channel, timeout, verbose)
+    build_external_deps(channel, index, extras, timeout, verbose)
 
     # if the current repo is a meta-repo, running tip on it
     if is_meta_project():
@@ -86,7 +90,7 @@ def _buildapp(channel, deps, force, timeout, verbose):
 
 
 @step('Now building the app itself')
-def build_core_app(timeout=120, verbose=False):
+def build_core_app(timeout=300, verbose=False):
     run('%s setup.py develop' % PYTHON, timeout, verbose)
 
 
@@ -97,7 +101,7 @@ def _is_git_repo(url):
 
 @step("Getting %(dep)s")
 def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False,
-              timeout=120, verbose=False):
+              timeout=300, verbose=False):
     repo = REPO_ROOT + dep
     target = os.path.join(deps_dir, dep)
     if os.path.exists(target):
@@ -128,7 +132,7 @@ def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False,
 
 
 @step('Building Services dependencies')
-def build_deps(deps, channel, specific_tags, timeout=120, verbose=False):
+def build_deps(deps, channel, specific_tags, timeout=300, verbose=False):
     """Will make sure dependencies are up-to-date"""
     location = os.getcwd()
     # do we want the latest tags ?
@@ -146,7 +150,7 @@ def build_deps(deps, channel, specific_tags, timeout=120, verbose=False):
 
 
 @step('Building External dependencies')
-def build_external_deps(channel, timeout=120, verbose=False):
+def build_external_deps(channel, index, extras, timeout=300, verbose=False):
     # looking for a req file
     reqname = '%s-reqs.txt' % channel
     if not os.path.exists(reqname):
@@ -158,4 +162,6 @@ def build_external_deps(channel, timeout=120, verbose=False):
             inc += 1
         os.rename('build', root + str(inc))
 
-    run('%s install -U -r %s' % (PIP, reqname), timeout, verbose)
+    run('%s install -i %s --extra-index-url %s -U -r %s' % (PIP, index,
+                                                            extras, reqname),
+                                                            timeout, verbose)

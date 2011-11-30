@@ -160,7 +160,7 @@ def with_timer(duration, cleanup=None):
     return _timer
 
 
-def run(command, timeout=120, verbose=False):
+def run(command, timeout=300, verbose=False):
     err_output = []
     out_output = []
 
@@ -465,7 +465,7 @@ def get_options(extra_options=None):
 
     parser.add_option("-t", "--timeout", dest="timeout",
                       help="Time out",
-                      default=120, type="int")
+                      default=300, type="int")
 
     for optargs, optkw in extra_options:
         parser.add_option(*optargs, **optkw)
