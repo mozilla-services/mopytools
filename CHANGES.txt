@@ -1,7 +1,8 @@
-1.9 - ?
-=======
+1.9 - 2011-11-30
+================
 
-?
+- Raised the default timeout to 300s
+- Make sure Pip uses the index/extras options
 
 1.8 - 2011-11-24
 ================
