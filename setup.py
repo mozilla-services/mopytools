@@ -56,7 +56,7 @@ package_data = {
                             "services_base/+package+/tests/*.*"]}
 
 
-setup(name='MoPyTools', version='1.9',
+setup(name='MoPyTools', version='2.0',
       author="Tarek Ziade", author_email="tarek@mozilla.com",
       url="http://hg.mozilla.org/services/server-devtools",
       description="Set of tools to build Mozilla Services apps",
