@@ -38,7 +38,7 @@ import sys
 
 from mopytools.util import (run, envname, update_cmd, step,
                             get_project_name, is_meta_project,
-                            has_changes)
+                            has_changes, is_git)
 
 
 @step('Updating the repo')
@@ -49,6 +49,9 @@ def updating_repo(name, channel, specific_tags, force=False, timeout=60,
         print('You can use --force but all uncommited '
               'changes will be discarded.')
         sys.exit(0)
+
+    if is_git():
+        run('git submodule update')
 
     run(update_cmd(name, channel, specific_tags, force), timeout, verbose)
 
