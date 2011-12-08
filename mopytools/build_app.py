@@ -60,11 +60,11 @@ def main():
     print("The current channel is %s." % channel)
 
     _buildapp(channel, deps, options.force, options.timeout, options.verbose,
-              options.index, options.extras)
+              options.index, options.extras, options.download_cache)
 
 
 @step('Building the app')
-def _buildapp(channel, deps, force, timeout, verbose, index, extras):
+def _buildapp(channel, deps, force, timeout, verbose, index, extras, cache):
     if extras is None:
         extras = ''
 
@@ -78,7 +78,7 @@ def _buildapp(channel, deps, force, timeout, verbose, index, extras):
     build_deps(deps, channel, specific_tags, timeout, verbose)
 
     # building the external deps now
-    build_external_deps(channel, index, extras, timeout, verbose)
+    build_external_deps(channel, index, extras, timeout, verbose, cache)
 
     # if the current repo is a meta-repo, running tip on it
     if is_meta_project():
@@ -150,7 +150,8 @@ def build_deps(deps, channel, specific_tags, timeout=300, verbose=False):
 
 
 @step('Building External dependencies')
-def build_external_deps(channel, index, extras, timeout=300, verbose=False):
+def build_external_deps(channel, index, extras, timeout=300, verbose=False,
+                        cache=None):
     # looking for a req file
     reqname = '%s-reqs.txt' % channel
     if not os.path.exists(reqname):
@@ -162,6 +163,11 @@ def build_external_deps(channel, index, extras, timeout=300, verbose=False):
             inc += 1
         os.rename('build', root + str(inc))
 
-    run('%s install -i %s --extra-index-url %s -U -r %s' % (PIP, index,
-                                                            extras, reqname),
-                                                            timeout, verbose)
+    if cache is not None:
+        pip = ('%s install --download-cache %s -i %s --extra-index-url '
+               '%s -U -r %s')
+        run(pip % (PIP, cache, index, extras, reqname), timeout, verbose)
+    else:
+        pip = ('%s install -i %s --extra-index-url '
+               '%s -U -r %s')
+        run(pip % (PIP, index, extras, reqname), timeout, verbose)

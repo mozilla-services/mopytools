@@ -467,6 +467,10 @@ def get_options(extra_options=None):
                       help="Time out",
                       default=300, type="int")
 
+    parser.add_option("--download-cache", dest="download_cache",
+                      help="Download cache",
+                      default=None)
+
     for optargs, optkw in extra_options:
         parser.add_option(*optargs, **optkw)
 
