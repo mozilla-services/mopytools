@@ -160,7 +160,8 @@ def build_deps_rpms(deps, channel, specific_tags, options):
 
 
 @step("Building %(project)s at version %(version)s")
-def build_rpm(project=None, dist_dir='rpms', version=None, index=PYPI):
+def build_rpm(project=None, dist_dir='rpms', version=None, index=PYPI,
+              download_cache=None):
     options = {'dist_dir': dist_dir, 'index': index}
     if version is None:
         cmd = "--index=%(index)s --dist-dir=%(dist_dir)s"
@@ -168,6 +169,9 @@ def build_rpm(project=None, dist_dir='rpms', version=None, index=PYPI):
         options['version'] = version
         cmd = ("--index=%(index)s --dist-dir=%(dist_dir)s "
                "--version=%(version)s")
+
+    if download_cache is not None:
+        cmd += ' --download-cache=%s' % download_cache
 
     run('%s %s %s' % (PYPI2RPM, cmd % options, project))
 
@@ -185,4 +189,5 @@ def build_external_deps_rpms(channel, options):
         for line in f.readlines():
             project, version = split_version(line)
             build_rpm(project=project, dist_dir=options.dist_dir,
-                      version=version, index=options.index)
+                      version=version, index=options.index,
+                      download_cache=options.download_cache)
