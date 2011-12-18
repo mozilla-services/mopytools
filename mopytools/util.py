@@ -19,6 +19,7 @@
 #
 # Contributor(s):
 #   Tarek Ziade (tarek@mozilla.com)
+#   Richard Newman (rnewman@mozilla.com)
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -208,7 +209,7 @@ def has_changes(timeout=5, verbose=False):
         code, out, err = run('git diff --exit-code', timeout, verbose)
         return code == 1
     else:
-        code, out, err = run('hg di', timeout, verbose)
+        code, out, err = run('hg diff', timeout, verbose)
         return out != ''
 
 
