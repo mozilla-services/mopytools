@@ -63,12 +63,14 @@ def is_git():
 
 def _get_tags(prefix=TAG_PREFIX):
     if is_git():
-        cmd = 'git tag'
+        cmds = ['git tag']
     else:
-        cmd = 'hg tags'
+        cmds = ['hg tags', 'hg branches']
 
-    sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    output = sub.stdout.read().strip()
+    output = ''
+    for cmd in cmds:
+        sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        output += sub.stdout.read().strip()
     if output == '':
         return []
 
