@@ -52,7 +52,7 @@ REPO_ROOT = 'https://hg.mozilla.org/services/'
 PYTHON = sys.executable
 PIP = os.path.join(os.path.dirname(PYTHON), 'pip')
 PYPI = 'http://pypi.python.org/simple'
-TAG_PREFIX = 'rpm-'
+TAG_PREFIX = os.environ.get('TAG_PREFIX', 'rpm-')
 PYPI2RPM = os.path.join(os.path.dirname(PYTHON), 'pypi2rpm.py')
 
 
@@ -61,7 +61,7 @@ def is_git():
     return '.git' in os.listdir('.')
 
 
-def _get_tags(prefix=TAG_PREFIX):
+def _get_tags():
     if is_git():
         cmds = ['git tag']
     else:
@@ -84,7 +84,7 @@ def _get_tags(prefix=TAG_PREFIX):
     return tags
 
 
-def tag_exists(tag, prefix=TAG_PREFIX):
+def tag_exists(tag):
     if tag in ('tip', 'defaut') or tag.isdigit():
         return True
     return tag in _get_tags(prefix)
@@ -216,7 +216,7 @@ def has_changes(timeout=5, verbose=False):
 
 
 def update_cmd(project=None, channel="prod", specific_tag=False,
-               force=False, tag_prefix=TAG_PREFIX):
+               force=False):
     if force and channel != 'dev':
         if is_git():
             cmd = 'git checkout --force'
@@ -473,10 +473,6 @@ def get_options(extra_options=None):
     parser.add_option("--download-cache", dest="download_cache",
                       help="Download cache",
                       default=None)
-
-    parser.add_option("--tag-prefix", dest="tag_prefix",
-                      help="Prefix required of build tags (or branches)",
-                      default=TAG_PREFIX)
 
     for optargs, optkw in extra_options:
         parser.add_option(*optargs, **optkw)
