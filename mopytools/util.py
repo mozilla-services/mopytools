@@ -70,7 +70,11 @@ def _get_tags():
     output = ''
     for cmd in cmds:
         sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-        output += sub.stdout.read().strip()
+        addl = sub.stdout.read().strip()
+        if addl:
+            if output:
+                output += '\n'
+            output += addl
     if output == '':
         return []
 
