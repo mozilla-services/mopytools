@@ -77,7 +77,7 @@ def _get_tags():
     tags = [tag_ for tag_ in
                 [line.split()[0] for line in
                  output.split('\n')]
-            if tag_.startswith(prefix)]
+            if tag_.startswith(TAG_PREFIX)]
     if is_git():
         tags.reverse()
 
@@ -87,7 +87,7 @@ def _get_tags():
 def tag_exists(tag):
     if tag in ('tip', 'defaut') or tag.isdigit():
         return True
-    return tag in _get_tags(prefix)
+    return tag in _get_tags()
 
 
 def get_channel_tag(channel):
@@ -244,7 +244,7 @@ def update_cmd(project=None, channel="prod", specific_tag=False,
     if project is not None:
         rev = os.environ.get(envname(project))
         if rev is not None:
-            if not tag_exists(rev, tag_prefix):
+            if not tag_exists(rev):
                 print('Unknown tag or revision: %s' % rev)
                 sys.exit(1)
 
