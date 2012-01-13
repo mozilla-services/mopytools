@@ -38,7 +38,7 @@ import sys
 
 from mopytools.util import (timeout, get_options, step, get_channel,
                             update_cmd, is_meta_project, PYTHON, run, PIP,
-                            REPO_ROOT, has_changes, is_git)
+                            REPO_ROOT, has_changes, is_git, TAG_PREFIX)
 from mopytools.build import get_environ_info, updating_repo
 
 
@@ -101,7 +101,7 @@ def _is_git_repo(url):
 
 @step("Getting %(dep)s")
 def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False,
-              timeout=300, verbose=False):
+              timeout=300, verbose=False, tag_prefix=TAG_PREFIX):
     repo = REPO_ROOT + dep
     target = os.path.join(deps_dir, dep)
     if os.path.exists(target):
@@ -126,13 +126,14 @@ def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False,
         else:
             print('Warning: the code was changed/')
 
-    cmd = update_cmd(dep, channel, specific_tags)
+    cmd = update_cmd(dep, channel, specific_tags, tag_prefix=tag_prefix)
     run(cmd, timeout, verbose)
     run('%s setup.py develop' % PYTHON, timeout, verbose)
 
 
 @step('Building Services dependencies')
-def build_deps(deps, channel, specific_tags, timeout=300, verbose=False):
+def build_deps(deps, channel, specific_tags, timeout=300, verbose=False,
+               tag_prefix=TAG_PREFIX):
     """Will make sure dependencies are up-to-date"""
     location = os.getcwd()
     # do we want the latest tags ?
@@ -144,7 +145,7 @@ def build_deps(deps, channel, specific_tags, timeout=300, verbose=False):
         for dep in deps:
             build_dep(dep=dep, deps_dir=deps_dir, channel=channel,
                       specific_tags=specific_tags, timeout=timeout,
-                      verbose=verbose)
+                      verbose=verbose, tag_prefix=tag_prefix)
     finally:
         os.chdir(location)
 

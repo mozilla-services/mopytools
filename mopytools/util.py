@@ -77,17 +77,17 @@ def _get_tags(prefix=TAG_PREFIX):
     tags = [tag_ for tag_ in
                 [line.split()[0] for line in
                  output.split('\n')]
-            if tag_.startswith(TAG_PREFIX)]
+            if tag_.startswith(prefix)]
     if is_git():
         tags.reverse()
 
     return tags
 
 
-def tag_exists(tag):
+def tag_exists(tag, prefix=TAG_PREFIX):
     if tag in ('tip', 'defaut') or tag.isdigit():
         return True
-    return tag in _get_tags()
+    return tag in _get_tags(prefix)
 
 
 def get_channel_tag(channel):
@@ -99,7 +99,7 @@ def get_channel_tag(channel):
     tags = _get_tags()
 
     if len(tags) == 0:
-        print ('Could not find any rpm-* tag')
+        print ('Could not find any %s* tag' % TAG_PREFIX)
         sys.exit(0)
 
     # looking for the latest channel tag
@@ -216,7 +216,7 @@ def has_changes(timeout=5, verbose=False):
 
 
 def update_cmd(project=None, channel="prod", specific_tag=False,
-               force=False):
+               force=False, tag_prefix=TAG_PREFIX):
     if force and channel != 'dev':
         if is_git():
             cmd = 'git checkout --force'
@@ -244,7 +244,7 @@ def update_cmd(project=None, channel="prod", specific_tag=False,
     if project is not None:
         rev = os.environ.get(envname(project))
         if rev is not None:
-            if not tag_exists(rev):
+            if not tag_exists(rev, tag_prefix):
                 print('Unknown tag or revision: %s' % rev)
                 sys.exit(1)
 
@@ -473,6 +473,10 @@ def get_options(extra_options=None):
     parser.add_option("--download-cache", dest="download_cache",
                       help="Download cache",
                       default=None)
+
+    parser.add_option("--tag-prefix", dest="tag_prefix",
+                      help="Prefix required of build tags (or branches)",
+                      default=TAG_PREFIX)
 
     for optargs, optkw in extra_options:
         parser.add_option(*optargs, **optkw)
