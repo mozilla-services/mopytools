@@ -1,7 +1,9 @@
-2.3 - ?
-=======
+2.3 - 2012-01-17
+================
 
-?
+- Fixed behavior on systems w/ hg diff tool installed
+  (i.e. use 'hg diff' instead of 'hg di')
+- Added support for TAG_PREFIX specified by an environment variable
 
 2.2 - 2011-12-11
 ================
