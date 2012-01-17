@@ -20,6 +20,7 @@
 # Contributor(s):
 #   Tarek Ziade (tarek@mozilla.com)
 #   Richard Newman (rnewman@mozilla.com)
+#   Rob Miller (rmiller@mozilla.com)
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -61,7 +62,7 @@ def is_git():
     return '.git' in os.listdir('.')
 
 
-def _get_tags():
+def _get_tags(prefix=TAG_PREFIX):
     if is_git():
         cmds = ['git tag']
     else:
@@ -81,7 +82,7 @@ def _get_tags():
     tags = [tag_ for tag_ in
                 [line.split()[0] for line in
                  output.split('\n')]
-            if tag_.startswith(TAG_PREFIX)]
+            if tag_.startswith(prefix)]
     if is_git():
         tags.reverse()
 
