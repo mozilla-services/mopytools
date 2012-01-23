@@ -48,13 +48,16 @@ from mopytools import util
 
 
 _CMDS = {"hg tags": """\
-tip                               34:7d3a88af29ec
+tip                               35:7d3a88af29ec
 rpm-0.5rc1                        33:51e4cfb38a04
 rpm-0.4                           32:c56849d09a4c
 rpm-0.4rc2                        32:51e4cfb38a04
 rpm-0.4rc1                        32:51e4cfb38a04
 rpm-0.3                           28:51e4cfb38a04
-rpm-0.2                           9:d6f665b7d6a3"""}
+rpm-0.2                           9:d6f665b7d6a3""",
+         "hg branches": """\
+default                           35:7d3a88af29ec
+feature                           34:fca8887c0991"""}
 
 
 _CFG = """\
@@ -96,6 +99,10 @@ class TestBuild(unittest.TestCase):
         self.assertEqual(get_channel_tag('dev'), 'default')
         self.assertEqual(get_channel_tag('prod'), 'rpm-0.4')
         self.assertEqual(get_channel_tag('stage'), 'rpm-0.5rc1')
+
+    def test_get_tag_actually_branch(self):
+        self.assertFalse('feature' in util._get_tags())
+        self.assertTrue('feature' in util._get_tags(prefix=''))
 
     def test_tag_exists(self):
         self.assertTrue(tag_exists('tip'))
