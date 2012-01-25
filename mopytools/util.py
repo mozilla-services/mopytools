@@ -45,8 +45,10 @@ from ConfigParser import ConfigParser
 from optparse import OptionParser
 import signal
 
-from distutils2.version import NormalizedVersion, IrrationalVersionError
+from distutils2.version import (NormalizedVersion, IrrationalVersionError,
+                                suggest_normalized_version)
 from distutils2.index.simple import Crawler, DEFAULT_SIMPLE_INDEX_URL
+from pkg_resources import parse_version
 
 
 REPO_ROOT = 'https://hg.mozilla.org/services/'
@@ -60,6 +62,26 @@ PYPI2RPM = os.path.join(os.path.dirname(PYTHON), 'pypi2rpm.py')
 def is_git():
     """Returns True if the current dir contains a .git"""
     return '.git' in os.listdir('.')
+
+
+def _sort_tags(tags):
+    # tags may come unordered
+    def _sort_version(version1, version2):
+        nv1 = suggest_normalized_version(version1)
+        nv2 = suggest_normalized_version(version2)
+        if nv1 is not None and nv2 is not None:
+            # we can use d2 to sort
+            if nv1 < nv2:
+                return -1
+            elif nv1 > nv2:
+                return 1
+            return 0
+        else:
+            # we fallback to setuptools sorting
+            return cmp(parse_version(version1), parse_version(version2))
+
+    tags.sort(cmp=_sort_version)
+    tags.reverse()
 
 
 def _get_tags(prefix=TAG_PREFIX):
@@ -83,9 +105,8 @@ def _get_tags(prefix=TAG_PREFIX):
                 [line.split()[0] for line in
                  output.split('\n')]
             if tag_.startswith(prefix)]
-    if is_git():
-        tags.reverse()
 
+    _sort_tags(tags)
     return tags
 
 
