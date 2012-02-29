@@ -1,7 +1,10 @@
-2.8 - ?
-=======
+2.8 - 2012-02-12
+================
 
--
+- skip lines that starts with '#' in requirement files
+- added an option so we may exit the process immediatly
+  when the exit code is not 0
+
 
 2.7 - 2012-01-30
 ================
