@@ -187,6 +187,9 @@ def build_external_deps_rpms(channel, options):
     # we have a requirement file, we can go ahead and feed pypi2rpm with it
     with open(req_file) as f:
         for line in f.readlines():
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
             project, version = split_version(line)
             build_rpm(project=project, dist_dir=options.dist_dir,
                       version=version, index=options.index,

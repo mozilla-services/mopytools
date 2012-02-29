@@ -189,7 +189,7 @@ def with_timer(duration, cleanup=None):
     return _timer
 
 
-def run(command, timeout=300, verbose=False):
+def run(command, timeout=300, verbose=False, allow_exit=False):
     err_output = []
     out_output = []
 
@@ -210,10 +210,12 @@ def run(command, timeout=300, verbose=False):
         code = sb.returncode
 
         if code != 0:
-            print("%r failed with code %d" % (command, code))
-            print(stdout)
-            print(stderr)
-            sys.exit(code)
+            if not allow_exit or verbose:
+                print("%r failed with code %d" % (command, code))
+                print(stdout)
+                print(stderr)
+            if not allow_exit:
+                sys.exit(code)
         elif verbose:
             print(stdout)
             print(stderr)
@@ -234,7 +236,7 @@ def envname(name):
 
 def has_changes(timeout=5, verbose=False):
     if is_git():
-        code, out, err = run('git diff --exit-code', timeout, verbose)
+        code, out, err = run('git diff --exit-code', timeout, verbose, allow_exit=True)
         return code == 1
     else:
         code, out, err = run('hg diff', timeout, verbose)
