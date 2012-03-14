@@ -37,7 +37,7 @@ from setuptools import setup, find_packages
 
 
 install_requires = ['Paste', 'PasteScript', 'PasteDeploy', 'flake8',
-                    'distutils2',
+                    'distutils2==1.0a3',
                     'virtualenv', 'pypi2rpm']
 
 
