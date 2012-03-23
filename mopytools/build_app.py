@@ -99,10 +99,25 @@ def _is_git_repo(url):
     return url.startswith('git://') or 'github.com' in url
 
 
+_REPO_SCHEMES = ('git', 'https', 'ssh')
+
+
 @step("Getting %(dep)s")
 def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False,
               timeout=300, verbose=False):
-    repo = REPO_ROOT + dep
+
+    # using REPO_ROOT if the provided dep is not an URL
+    is_url = False
+    for scheme in _REPO_SCHEMES:
+        if dep.startswith(scheme):
+            is_url = True
+            break
+
+    if not is_url:
+        repo = REPO_ROOT + dep
+    else:
+        repo = dep
+
     target = os.path.join(deps_dir, dep)
     if os.path.exists(target):
         os.chdir(target)
