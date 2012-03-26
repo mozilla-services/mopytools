@@ -36,6 +36,7 @@
 import os
 import sys
 import shutil
+import subprocess
 
 from mopytools.util import (timeout, get_options, step, get_channel,
                             split_version, get_spec_file, run,
@@ -104,6 +105,10 @@ def _buildrpms(deps, channel, options):
     build_external_deps_rpms(channel, options)
 
 
+_MAJOR, _MINOR = sys.version_info[0], sys.version_info[1]
+_PYTHON = 'python%d%d' % (_MAJOR, _MINOR)
+
+
 def _build_rpm(channel, options):
     if has_changes() and channel != 'dev' and not options.force:
         print('the code was changed, aborting!')
@@ -113,18 +118,34 @@ def _build_rpm(channel, options):
     if os.path.exists('build'):
         shutil.rmtree('build')
 
+    cmd_options = {'dist': options.dist_dir}
+    cmd = ("--command-packages=pypi2rpm.command bdist_rpm2 "
+           "--dist-dir=%(dist)s --binary-only")
+
     # where's the spec file ?
     spec_file = get_spec_file()
 
-    if spec_file is None:
-        return
+    # if there's a spec file we use it
+    if spec_file is not None:
+        cmd_options['spec'] = spec_file
+        cmd += ' --spec-file=%(spec)s'
+    else:
+        # if not we define a python-name for the rpm
+        # grab the name and create a normalized one
+        popen = subprocess.Popen('%s setup.py --name' % sys.executable,
+                                 stdout=subprocess.PIPE, shell=True)
+        name = [line for line in popen.stdout.read().split('\n') if line != '']
+        name = name[-1].strip().lower()
 
-    cmd_options = {'spec': spec_file, 'dist': options.dist_dir}
+        if not name.startswith('python'):
+            name = '%s-%s' % (_PYTHON, name)
+        elif name.startswith('python-'):
+            name = '%s-%s' % (_PYTHON, name[len('python-'):])
+
+        cmd_options['name'] = name
+        cmd += ' --name=%(name)s'
 
     # now running the cmd
-    cmd = ("--command-packages=pypi2rpm.command bdist_rpm2 "
-           "--spec-file=%(spec)s --dist-dir=%(dist)s")
-
     run('%s setup.py %s' % (PYTHON, cmd % cmd_options))
 
 
