@@ -292,18 +292,23 @@ def step(text):
             fstep = step = _LEVEL * 2 * " "
             if _LEVEL > 0:
                 fstep = '\n' + step
-            sys.stdout.write(fstep + text % kw + ' ')
+            msg = fstep + text % kw + ' '
+            msg_len = len(msg)
+            sys.stdout.write(msg)
             sys.stdout.flush()
             try:
                 res = func(*args, **kw)
+                pad = 100 - (len(step) + msg_len)
+                msg = ('%s%' + str(pad) + 's')
+
                 if _LEVEL > 0:
-                    sys.stdout.write(step + '[ok]')
+                    sys.stdout.write(msg % (step, '[ok]'))
                 else:
-                    sys.stdout.write(step + '\n[done]')
+                    sys.stdout.write(step + '\n %100s' % '[done]')
                 sys.stdout.flush()
                 return res
             except:
-                sys.stdout.write('[fail]')
+                sys.stdout.write(' %100s' % '[fail]')
                 sys.stdout.flush()
                 raise
             finally:
