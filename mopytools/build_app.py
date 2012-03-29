@@ -170,7 +170,8 @@ def build_external_deps(channel, index, extras, timeout=300, verbose=False,
     # looking for a req file
     reqname = '%s-reqs.txt' % channel
     if not os.path.exists(reqname):
-        raise IOError("File not found %s" % reqname)
+        return
+
     if os.path.exists('build'):
         root = 'build'
         inc = 1
