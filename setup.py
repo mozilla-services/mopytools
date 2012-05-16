@@ -50,6 +50,15 @@ buildapp = mopytools.build_app:main
 buildrpms = mopytools.build_rpms:main
 """
 
+
+with open('README.rst') as f:
+    README = f.read()
+
+
+with open('CHANGES.rst') as f:
+    CHANGES = f.read()
+
+
 package_data = {
   "mopytools.apptemplate": ["services_base/*.*",
                             "services_base/+package+/*.*",
@@ -60,6 +69,7 @@ setup(name='MoPyTools', version='3.3',
       author="Mozilla Services", author_email="services-dev@mozilla.org",
       url="https://github.com/mozilla-services/mopytools",
       description="Set of tools to build Mozilla Services apps",
+      long_description=README + '\n\n' + CHANGES,
       packages=find_packages(),
       package_data=package_data,
       install_requires=install_requires,
