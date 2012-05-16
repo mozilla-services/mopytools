@@ -57,8 +57,8 @@ package_data = {
 
 
 setup(name='MoPyTools', version='3.3',
-      author="Tarek Ziade", author_email="tarek@mozilla.com",
-      url="http://hg.mozilla.org/services/server-devtools",
+      author="Mozilla Services", author_email="services-dev@mozilla.org",
+      url="https://github.com/mozilla-services/mopytools",
       description="Set of tools to build Mozilla Services apps",
       packages=find_packages(),
       package_data=package_data,
