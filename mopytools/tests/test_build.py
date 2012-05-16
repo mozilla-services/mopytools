@@ -174,3 +174,10 @@ class TestBuild(unittest.TestCase):
         finally:
             sys.argv[:] = old_argv
             sys.stdout = old_stdout
+
+    def test_pinning(self):
+        reqs = os.path.join(os.path.dirname(__file__), 'dev-reqs.txt')
+        unpinned = util.get_non_pinned(reqs)
+        unpinned.sort()
+        self.assertEqual(unpinned,
+                         ['Paste', 'translationstring', 'wsgi-intercept'])

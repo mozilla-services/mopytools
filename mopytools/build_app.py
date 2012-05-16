@@ -38,7 +38,8 @@ import sys
 
 from mopytools.util import (timeout, get_options, step, get_channel,
                             update_cmd, is_meta_project, PYTHON, run, PIP,
-                            REPO_ROOT, has_changes, is_git)
+                            REPO_ROOT, has_changes, is_git, get_non_pinned,
+                            DependencyError)
 from mopytools.build import get_environ_info, updating_repo
 
 
@@ -171,6 +172,13 @@ def build_external_deps(channel, index, extras, timeout=300, verbose=False,
     reqname = '%s-reqs.txt' % channel
     if not os.path.exists(reqname):
         return
+
+    # if not dev, check for pinned versions.
+    if channel != 'dev':
+        non_pinned = get_non_pinned(reqname)
+        if len(non_pinned) > 0:
+            deps = ', '.join(non_pinned)
+            raise DependencyError('Unpinned dependencies: %s' % deps)
 
     if os.path.exists('build'):
         root = 'build'

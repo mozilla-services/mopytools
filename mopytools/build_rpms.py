@@ -40,7 +40,8 @@ import subprocess
 
 from mopytools.util import (timeout, get_options, step, get_channel,
                             split_version, get_spec_file, run,
-                            PYTHON, PYPI2RPM, PYPI, has_changes)
+                            PYTHON, PYPI2RPM, PYPI, has_changes,
+                            get_non_pinned, DependencyError)
 from mopytools.build import get_environ_info, updating_repo
 from mopytools.build_app import main as build_app
 
@@ -204,6 +205,13 @@ def build_external_deps_rpms(channel, options):
     if not os.path.exists(req_file):
         print("Can't find the req file for the %s channel." % channel)
         sys.exit(0)
+
+    # if not dev, check for pinned versions.
+    if channel != 'dev':
+        non_pinned = get_non_pinned(req_file)
+        if len(non_pinned) > 0:
+            deps = ', '.join(non_pinned)
+            raise DependencyError('Unpinned dependencies: %s' % deps)
 
     # we have a requirement file, we can go ahead and feed pypi2rpm with it
     with open(req_file) as f:

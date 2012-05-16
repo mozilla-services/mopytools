@@ -50,6 +50,8 @@ from distutils2.version import (NormalizedVersion, IrrationalVersionError,
 from distutils2.index.simple import Crawler, DEFAULT_SIMPLE_INDEX_URL
 from pkg_resources import parse_version
 
+from pip.req import parse_requirements
+
 
 REPO_ROOT = 'https://hg.mozilla.org/services/'
 PYTHON = sys.executable
@@ -238,7 +240,8 @@ def envname(name):
 
 def has_changes(timeout=5, verbose=False):
     if is_git():
-        code, out, err = run('git diff --exit-code', timeout, verbose, allow_exit=True)
+        code, out, err = run('git diff --exit-code', timeout, verbose,
+                             allow_exit=True)
         return code == 1
     else:
         code, out, err = run('hg diff', timeout, verbose)
@@ -544,3 +547,23 @@ def get_last_channel():
         return 'prod'
     with open('.channel') as f:
         return f.read()
+
+
+class DependencyError(Exception):
+    pass
+
+
+class Options:
+    skip_requirements_regex = False
+
+
+def get_non_pinned(reqfile):
+    """Return non-pinned or dev versions.
+
+    Look for XXX==XXX patterns
+    """
+    res = []
+    for req in parse_requirements(reqfile, options=Options()):
+        if list(req.absolute_versions) == []:
+            res.append(req.name)
+    return res
