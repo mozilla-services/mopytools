@@ -137,10 +137,11 @@ def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False,
 
     if has_changes(timeout, verbose):
         if channel != 'dev':
-            print('the code was changed, aborting!')
+            print('The code was changed, aborting !')
+            print('Use the dev channel if you change locally the code')
             sys.exit(0)
         else:
-            print('Warning: the code was changed/')
+            print('Warning: the code was changed.')
 
     cmd = update_cmd(dep, channel, specific_tags)
     run(cmd, timeout, verbose)

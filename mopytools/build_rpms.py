@@ -112,7 +112,8 @@ _PYTHON = 'python%d%d' % (_MAJOR, _MINOR)
 
 def _build_rpm(channel, options):
     if has_changes() and channel != 'dev' and not options.force:
-        print('the code was changed, aborting!')
+        print('The code was changed, aborting !')
+        print('Use the dev channel if you change locally the code')
         sys.exit(0)
 
     # removing any build dir
