@@ -55,6 +55,18 @@ rpm-0.4rc2                        32:51e4cfb38a04
 rpm-0.4rc1                        32:51e4cfb38a04
 rpm-0.3                           28:51e4cfb38a04
 rpm-0.2                           9:d6f665b7d6a3""",
+
+        "git tag": """\
+rpm-0.2
+rpm-0.3
+rpm-0.4rc1
+rpm-0.4rc2
+rpm-0.4
+rpm-0.5rc1""",
+         "git branch": """\
+* master
+  feature""",
+
          "hg branches": """\
 default                           35:7d3a88af29ec
 feature                           34:fca8887c0991"""}
@@ -96,7 +108,7 @@ class TestBuild(unittest.TestCase):
         util.ConfigParser = self.old_cp
 
     def test_get_tag(self):
-        self.assertEqual(get_channel_tag('dev'), 'default')
+        self.assertEqual(get_channel_tag('dev'), 'master')
         self.assertEqual(get_channel_tag('prod'), 'rpm-0.4')
         self.assertEqual(get_channel_tag('stage'), 'rpm-0.5rc1')
 

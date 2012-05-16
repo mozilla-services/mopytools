@@ -86,7 +86,7 @@ def _sort_tags(tags):
 
 def _get_tags(prefix=TAG_PREFIX):
     if is_git():
-        cmds = ['git tag']
+        cmds = ['git tag', 'git branch']
     else:
         cmds = ['hg tags', 'hg branches']
 
@@ -101,11 +101,13 @@ def _get_tags(prefix=TAG_PREFIX):
     if output == '':
         return []
 
-    tags = [tag_ for tag_ in
-                [line.split()[0] for line in
-                 output.split('\n')]
-            if tag_.startswith(prefix)]
-
+    tags = []
+    for line in output.split('\n'):
+        tag = line.split()[0]
+        tag = tag.lstrip('*')
+        tag = tag.strip()
+        if tag.startswith(prefix):
+            tags.append(tag)
     _sort_tags(tags)
     return tags
 
