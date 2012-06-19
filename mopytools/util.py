@@ -235,7 +235,7 @@ def run(command, timeout=300, verbose=False, allow_exit=False):
 
 
 def envname(name):
-    return name.upper().replace('-', '_')
+    return os.path.basename(name).upper().replace('-', '_')
 
 
 def has_changes(timeout=5, verbose=False):

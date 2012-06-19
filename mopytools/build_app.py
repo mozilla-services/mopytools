@@ -119,7 +119,7 @@ def build_dep(dep=None, deps_dir=None, channel='prod', specific_tags=False,
     else:
         repo = dep
 
-    target = os.path.join(deps_dir, dep)
+    target = os.path.join(deps_dir, os.path.basename(dep))
     if os.path.exists(target):
         os.chdir(target)
         if is_git():

@@ -158,7 +158,7 @@ def build_core_rpm(deps, channel, specific_tags, options):
 
 @step("Building %(dep)s")
 def build_dep_rpm(dep='', deps_dir='deps', channel='prod', options=None):
-    target = os.path.join(deps_dir, dep)
+    target = os.path.join(deps_dir, os.path.basename(dep))
     if not os.path.exists(target):
         print('You need to build your deps first.')
     os.chdir(target)
