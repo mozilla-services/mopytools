@@ -235,7 +235,7 @@ def run(command, timeout=300, verbose=False, allow_exit=False):
 
 
 def envname(name):
-    return name.upper().replace('-', '_')
+    return os.path.basename(name).upper().replace('-', '_')
 
 
 def has_changes(timeout=5, verbose=False):
@@ -281,7 +281,10 @@ def update_cmd(project=None, channel="prod", specific_tag=False,
                 print('Unknown tag or revision: %s' % rev)
                 sys.exit(1)
 
-            return '%s -r "%s"' % (cmd, rev)
+            if is_git():
+                return '%s "%s"' % (cmd, rev)
+            else:
+                return '%s -r "%s"' % (cmd, rev)
 
     return cmd
 
