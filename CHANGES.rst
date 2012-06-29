@@ -2,10 +2,11 @@ Changelog
 ---------
 
 `
-3.3 - ?
-=======
+3.3 - 2012-06-29
+================
 
-?
+- improve support for building git-hosted dependencies.
+- error out if there are unpined dependencies in stage/prod reqs file.
 
 
 3.2 - 2012-03-29
