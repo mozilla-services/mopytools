@@ -57,7 +57,7 @@ with open('CHANGES.rst') as f:
 
 
 
-setup(name='MoPyTools', version='3.3',
+setup(name='MoPyTools', version='3.4',
       author="Mozilla Services", author_email="services-dev@mozilla.org",
       url="https://github.com/mozilla-services/mopytools",
       description="Set of tools to build Mozilla Services apps",
