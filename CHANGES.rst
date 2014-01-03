@@ -1,8 +1,8 @@
 Changelog
 ---------
 
-3.4 - ?
-=======
+3.4 - 2014-01-03
+================
 
 - don't pass an empty --extra-index-url through to pip.
 
