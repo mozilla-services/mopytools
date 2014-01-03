@@ -66,9 +66,6 @@ def main():
 
 @step('Building the app')
 def _buildapp(channel, deps, force, timeout, verbose, index, extras, cache):
-    if extras is None:
-        extras = ''
-
     # check the environ
     name, specific_tags = get_environ_info(deps)
 
@@ -188,11 +185,12 @@ def build_external_deps(channel, index, extras, timeout=300, verbose=False,
             inc += 1
         os.rename('build', root + str(inc))
 
+    pip = '%s install -i %s -U -r %s'
+    args = (PIP, index, reqname)
     if cache is not None:
-        pip = ('%s install --download-cache %s -i %s --extra-index-url '
-               '%s -U -r %s')
-        run(pip % (PIP, cache, index, extras, reqname), timeout, verbose)
-    else:
-        pip = ('%s install -i %s --extra-index-url '
-               '%s -U -r %s')
-        run(pip % (PIP, index, extras, reqname), timeout, verbose)
+        pip += ' --download-cache %s'
+        args += (cache,)
+    if extras is not None:
+        pip += ' --extra-index-url %s'
+        args += (extras,)
+    run(pip % args, timeout, verbose)

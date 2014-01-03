@@ -4,7 +4,7 @@ Changelog
 3.4 - ?
 =======
 
-?
+- don't pass an empty --extra-index-url through to pip.
 
 
 3.3 - 2012-06-29
